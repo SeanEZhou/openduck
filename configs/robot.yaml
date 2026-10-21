@@ -1,0 +1,77 @@
+# Open Duck Mini v2 — robot specification (single source of truth).
+#
+# Everything here is checked against the MJCF by tests/test_robot_model.py.
+# Joint order == actuator order in the MJCF == servo order in the upstream
+# runtime (Open_Duck_Mini_Runtime rustypot_position_hwi.py). Do not reorder.
+
+name: open_duck_mini_v2
+source:
+  cad: https://cad.onshape.com/documents/64074dfcfa379b37d8a47762
+  mjcf_repo: https://github.com/apirrone/Open_Duck_Playground
+  mjcf_commit: b9be205ac64488c23504ca42e5ec790337adeec3
+  hardware_repo: https://github.com/apirrone/Open_Duck_Mini
+  hardware_commit: b23317a485b3cec7d8417f352478778b3475173c
+  runtime_repo: https://github.com/apirrone/Open_Duck_Mini_Runtime
+  runtime_commit: 376de65435c93486347cd601a31aa96951799896
+
+model:
+  scene: assets/open_duck_mini_v2/scene_flat_terrain.xml
+  reference_motion: assets/open_duck_mini_v2/reference_motion.npz
+  root_body: trunk_assembly
+  imu_site: imu
+  foot_sites: [left_foot, right_foot]
+  foot_geoms: [left_foot_bottom_tpu, right_foot_bottom_tpu]
+  floor_geom: floor
+  home_keyframe: home
+
+# Feetech STS3215 (7.4 V), parameters identified upstream with Rhoban BAM
+# (bam/params/feetech_sts3215_7_4V), as set in the MJCF "sts3215" default class.
+actuator:
+  model: feetech_sts3215
+  kp: 13.37            # N·m/rad, MuJoCo position actuator gain
+  forcerange: 3.23     # N·m
+  damping: 0.56        # N·m·s/rad
+  frictionloss: 0.068  # N·m
+  armature: 0.027      # kg·m²
+  max_velocity: 5.24   # rad/s, used for target rate limiting
+  encoder_ticks_per_rev: 4096
+
+# servo_id: bus ID on the real robot. home: nominal pose (rad), from the
+# MJCF "home" keyframe. range: hard limits (rad) from the MJCF.
+# mirror: sign relating this joint to its left/right counterpart in the
+# home pose (+1 same sign, -1 opposite sign), checked by tests.
+joints:
+  - {name: left_hip_yaw,    group: left_leg,  servo_id: 20, home:  0.002, range: [-0.5236, 0.5236]}
+  - {name: left_hip_roll,   group: left_leg,  servo_id: 21, home:  0.053, range: [-0.4363, 0.4363]}
+  - {name: left_hip_pitch,  group: left_leg,  servo_id: 22, home: -0.630, range: [-1.2217, 0.5236]}
+  - {name: left_knee,       group: left_leg,  servo_id: 23, home:  1.368, range: [-1.5708, 1.5708]}
+  - {name: left_ankle,      group: left_leg,  servo_id: 24, home: -0.784, range: [-1.5708, 1.5708]}
+  - {name: neck_pitch,      group: head,      servo_id: 30, home:  0.000, range: [-0.3491, 1.1345]}
+  - {name: head_pitch,      group: head,      servo_id: 31, home:  0.000, range: [-0.7854, 0.7854]}
+  - {name: head_yaw,        group: head,      servo_id: 32, home:  0.000, range: [-2.7925, 2.7925]}
+  - {name: head_roll,       group: head,      servo_id: 33, home:  0.000, range: [-0.5236, 0.5236]}
+  - {name: right_hip_yaw,   group: right_leg, servo_id: 10, home: -0.003, range: [-0.5236, 0.5236]}
+  - {name: right_hip_roll,  group: right_leg, servo_id: 11, home: -0.065, range: [-0.4363, 0.4363]}
+  - {name: right_hip_pitch, group: right_leg, servo_id: 12, home:  0.635, range: [-0.5236, 1.2217]}
+  - {name: right_knee,      group: right_leg, servo_id: 13, home:  1.379, range: [-1.5708, 1.5708]}
+  - {name: right_ankle,     group: right_leg, servo_id: 14, home: -0.796, range: [-1.5708, 1.5708]}
+
+# Left/right correspondence with the sign mapping between them: for a
+# mirror-symmetric pose, q_right = sign * q_left. Hip pitch axes are flipped
+# between legs in the CAD, so pitch mirrors with -1 while knee/ankle use +1.
+mirror:
+  - {left: left_hip_yaw,   right: right_hip_yaw,   sign: -1}
+  - {left: left_hip_roll,  right: right_hip_roll,  sign: -1}
+  - {left: left_hip_pitch, right: right_hip_pitch, sign: -1}
+  - {left: left_knee,      right: right_knee,      sign: 1}
+  - {left: left_ankle,     right: right_ankle,     sign: 1}
+
+control:
+  policy_dt: 0.02       # 50 Hz, matches upstream runtime
+  sim_dt: 0.002         # 500 Hz physics
+  action_scale: 0.25    # target = home + action_scale * action
+  soft_limit_factor: 0.95
+
+sensors:
+  imu: bno055
+  feet_contacts: true

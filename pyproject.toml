@@ -1,0 +1,29 @@
+[project]
+name = "biped"
+version = "0.1.0"
+description = "Sim-to-real RL locomotion for the Open Duck Mini v2"
+requires-python = ">=3.10"
+dependencies = [
+    "mujoco>=3.2",
+    "numpy",
+    "pyyaml",
+    "gymnasium",
+    "stable-baselines3>=2.3",
+    "torch",
+    "tensorboard",
+    "onnx",
+    "onnxruntime",
+    "mediapy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+gpu = ["jax[cuda12]", "mujoco-mjx", "brax", "playground"]
+hardware = ["rustypot", "adafruit-circuitpython-bno055"]
+
+[tool.setuptools.packages.find]
+include = ["biped*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: rollouts of full policies (deselect with -m 'not slow')"]

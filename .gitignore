@@ -1,0 +1,34 @@
+# --- Private / planning docs (not part of the public project) ---
+BipedRL_Sim_to_Real_Project.md
+.claude/
+CLAUDE.md
+
+# --- Python / tooling ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.jax_cache/
+.ipynb_checkpoints/
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# --- Upstream clones (fetch with scripts/fetch_upstream.sh; needed files are vendored in assets/) ---
+third_party/
+
+# --- Training artifacts ---
+# Kept: config.yaml, progress.jsonl, policy.onnx, eval/push/validation JSON, ablation notes.
+results/**/tb/
+results/**/*.pkl
+results/**/*.zip
+results/**/policy_0*.onnx
+results/**/*.mp4
+results/*.log
+# Superseded / aborted runs
+results/standing_seed0/
+results/mjx_standing_seed0_ungrounded_reset/

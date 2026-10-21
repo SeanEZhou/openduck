@@ -1,0 +1,89 @@
+# M2 — PPO standing: upright balance, small perturbations, head motion.
+
+env:
+  episode_length: 500            # control steps (10 s)
+  use_reference_motion: false
+  randomization: randomized      # key in configs/randomization.yaml
+  action_bound: 4.0              # |action| <= 4 -> |offset| <= 1 rad
+  action:
+    rate_limit: true
+    clip_to_soft_limits: true
+    head_command_offset: true
+
+  commands:
+    resample_steps: 250
+    zero_prob: 1.0               # standing: velocity commands always zero
+    head_zero_prob: 0.5
+    head:
+      neck_pitch: [-0.2, 0.5]
+      head_pitch: [-0.4, 0.4]
+      head_yaw: [-0.8, 0.8]
+      head_roll: [-0.3, 0.3]
+
+  init:
+    joint_scale: [0.85, 1.15]
+    base_xy: 0.05
+    yaw: 3.14
+    base_vel: 0.05
+
+  noise:
+    level: 1.0
+    joint_pos: {hip: 0.03, knee: 0.05, ankle: 0.08, head: 0.03}
+    joint_vel: 2.5
+    gyro: 0.1
+    accelerometer: 0.05
+    gravity: 0.05
+    action_delay: [0, 2]         # control steps, inclusive
+    imu_delay: [0, 2]
+
+  push:
+    enable: true
+    interval_range: [3.0, 6.0]   # s
+    magnitude_range: [0.05, 0.5] # m/s base velocity kick
+
+  termination:
+    max_tilt: 0.8                # rad (~46 deg)
+    min_height: 0.08             # m
+
+  rewards:
+    clip_min: null
+    scales:
+      alive: 5.0
+      orientation: -10.0
+      base_height: -200.0
+      base_lin_vel_xy: -2.0
+      ang_vel_xy: -0.2
+      pose: -0.5
+      double_support: 1.0
+      torques: -1.0e-3
+      action_rate: -0.5
+      joint_vel: -1.0e-3
+      joint_limits: -10.0
+      termination: -100.0
+    params: {}
+
+ppo:
+  total_timesteps: 10_000_000
+  n_envs: 16
+  n_steps: 512
+  batch_size: 2048
+  n_epochs: 5
+  learning_rate: 3.0e-4
+  gamma: 0.97
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.0
+  vf_coef: 0.5
+  max_grad_norm: 1.0
+  target_kl: 0.03
+  log_std_init: -1.0
+  net_arch: {pi: [256, 256, 128], vf: [512, 256, 128]}
+  activation: elu
+  normalize_obs: true
+  seed: 0
+
+# GPU training (scripts/train_mjx.py, Brax PPO). Upstream Open Duck / Playground settings.
+brax_ppo:
+  num_timesteps: 50_000_000
+  num_envs: 8192
+  num_evals: 10

@@ -1,0 +1,20 @@
+# Domain randomization ranges, sampled uniformly per episode.
+# "*_scale" entries multiply the nominal value; others are absolute.
+# Centred on upstream Open Duck Playground ranges; refine after actuator
+# identification on our own servos (Track B, M4).
+
+nominal:
+  enable: false
+
+randomized:
+  enable: true
+  floor_friction: [0.5, 1.0]
+  body_mass_scale: [0.9, 1.1]
+  trunk_added_mass: [-0.1, 0.1]       # kg
+  trunk_com_offset: [-0.02, 0.02]     # m, per axis
+  joint_damping_scale: [0.8, 1.2]
+  joint_frictionloss_scale: [0.9, 1.1]
+  joint_armature_scale: [1.0, 1.05]
+  kp_scale: [0.9, 1.1]
+  torque_limit_scale: [0.9, 1.1]
+  joint_offset: [-0.03, 0.03]         # rad, servo zero calibration error

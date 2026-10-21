@@ -1,0 +1,9 @@
+BEST_WALK_ONNX, cmd vx=0.1, 10 episodes x 15 s
+nominal                    fall 0.0  mean dur  15.0s  vx_err 0.027
+noise+latency              fall 0.0  mean dur  15.0s  vx_err 0.058
+pushes                     fall 0.5  mean dur  10.7s  vx_err 0.119
+DR (all)                   fall 0.0  mean dur  15.0s  vx_err 0.036
+DR w/o joint_offset        fall 0.0  mean dur  15.0s  vx_err 0.031
+DR joint_offset only       fall 0.0  mean dur  15.0s  vx_err 0.031
+DR trunk com/mass only     fall 0.0  mean dur  15.0s  vx_err 0.032
+everything                 fall 0.5  mean dur  12.7s  vx_err 0.144

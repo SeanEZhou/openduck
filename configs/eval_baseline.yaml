@@ -1,0 +1,11 @@
+# Evaluation of the upstream Open Duck ONNX walking policies in our env.
+# Inherits the walking task, with randomization, noise and pushes off by default
+# (evaluate.py can re-enable them to measure robustness).
+
+base: configs/train_walking.yaml
+env:
+  randomization: nominal
+  noise: {level: 0.0}
+  push: {enable: false}
+  init: {joint_scale: [1.0, 1.0], base_xy: 0.0, yaw: 0.0, base_vel: 0.0}
+  commands: {resample_steps: 0, zero_prob: 0.0, head_zero_prob: 1.0}

@@ -1,0 +1,15 @@
+{
+  "policy": "third_party/Open_Duck_Mini/BEST_WALK_ONNX.onnx",
+  "cmd": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "success_by_magnitude": {
+    "0.2": 1.0,
+    "0.4": 0.875,
+    "0.6": 0.75,
+    "0.8": 0.625,
+    "1.0": 0.125
+  }
+}

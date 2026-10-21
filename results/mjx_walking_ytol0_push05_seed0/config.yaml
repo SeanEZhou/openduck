@@ -1,0 +1,140 @@
+brax_ppo:
+  batch_size: 256
+  clipping_epsilon: 0.2
+  discounting: 0.97
+  entropy_cost: 0.005
+  learning_rate: 0.0003
+  max_grad_norm: 1.0
+  normalize_observations: true
+  num_envs: 8192
+  num_evals: 15
+  num_minibatches: 32
+  num_resets_per_eval: 0
+  num_timesteps: 150000000
+  num_updates_per_batch: 4
+  policy_hidden_layer_sizes:
+  - 512
+  - 256
+  - 128
+  reward_scaling: 1.0
+  unroll_length: 20
+  value_hidden_layer_sizes:
+  - 512
+  - 256
+  - 128
+env:
+  action:
+    clip_to_soft_limits: true
+    head_command_offset: true
+    rate_limit: true
+  action_bound: 4.0
+  commands:
+    ang_vel_yaw:
+    - -1.0
+    - 1.0
+    head:
+      head_pitch:
+      - -0.78
+      - 0.78
+      head_roll:
+      - -0.5
+      - 0.5
+      head_yaw:
+      - -1.5
+      - 1.5
+      neck_pitch:
+      - -0.34
+      - 1.1
+    head_zero_prob: 0.5
+    lin_vel_x:
+    - -0.15
+    - 0.15
+    lin_vel_y:
+    - -0.2
+    - 0.2
+    resample_steps: 500
+    zero_prob: 0.1
+  episode_length: 1000
+  init:
+    base_vel: 0.05
+    base_xy: 0.05
+    joint_scale:
+    - 0.8
+    - 1.2
+    yaw: 3.14
+  noise:
+    accelerometer: 0.05
+    action_delay:
+    - 0
+    - 2
+    gravity: 0.1
+    gyro: 0.1
+    imu_delay:
+    - 0
+    - 2
+    joint_pos:
+      ankle: 0.08
+      head: 0.03
+      hip: 0.03
+      knee: 0.05
+    joint_vel: 2.5
+    level: 1.0
+  push:
+    enable: true
+    interval_range:
+    - 5.0
+    - 10.0
+    magnitude_range:
+    - 0.1
+    - 0.5
+  randomization: randomized
+  rewards:
+    clip_min: 0.0
+    params:
+      tracking_ang_vel:
+        sigma: 0.01
+      tracking_lin_vel:
+        sigma: 0.01
+        y_tol: 0.0
+    scales:
+      action_rate: -0.5
+      alive: 20.0
+      imitation: 1.0
+      stand_still: -0.2
+      torques: -0.001
+      tracking_ang_vel: 6.0
+      tracking_lin_vel: 2.5
+  termination:
+    max_tilt: 1.5708
+    min_height: 0.0
+  use_reference_motion: true
+git_commit: null
+ppo:
+  activation: elu
+  batch_size: 2048
+  clip_range: 0.2
+  ent_coef: 0.005
+  gae_lambda: 0.95
+  gamma: 0.97
+  learning_rate: 0.0003
+  log_std_init: -1.0
+  max_grad_norm: 1.0
+  n_envs: 16
+  n_epochs: 5
+  n_steps: 512
+  net_arch:
+    pi:
+    - 256
+    - 256
+    - 128
+    vf:
+    - 512
+    - 256
+    - 128
+  normalize_obs: true
+  seed: 0
+  target_kl: 0.03
+  total_timesteps: 150000000
+  vf_coef: 0.5
+seed: 0
+source_config: configs/train_walking.yaml

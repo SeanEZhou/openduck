@@ -1,0 +1,25 @@
+{
+  "policy": "results/mjx_standing_seed0/policy.onnx",
+  "config": "configs/train_standing.yaml",
+  "randomized": true,
+  "per_command": [
+    {
+      "episodes": 5,
+      "fall_rate": 0.4,
+      "duration_s": 12.951999999999998,
+      "distance_m": 0.07986664641134023,
+      "vx_error": 0.06682117896465037,
+      "vy_error": 0.012046784261866469,
+      "yaw_rate_error": 0.09796580747543308,
+      "mean_tilt_deg": 2.027584649700774,
+      "joint_tracking_rms": 0.024071095961125843,
+      "action_rate_rms": 0.21917939641345954,
+      "command": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "overall_fall_rate": 0.4
+}

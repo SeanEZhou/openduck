@@ -1,0 +1,161 @@
+{
+  "policy": "third_party/Open_Duck_Mini/BEST_WALK_ONNX_2.onnx",
+  "config": "configs/eval_baseline.yaml",
+  "randomized": true,
+  "per_command": [
+    {
+      "episodes": 10,
+      "fall_rate": 0.6,
+      "duration_s": 11.684000000000001,
+      "distance_m": 0.25849972569048235,
+      "vx_error": 0.15170178748279622,
+      "vy_error": 0.0541772670114611,
+      "yaw_rate_error": 0.23564682964409084,
+      "mean_tilt_deg": 6.640839132143126,
+      "joint_tracking_rms": 0.028606611135520887,
+      "action_rate_rms": 0.26142594878069625,
+      "command": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "episodes": 10,
+      "fall_rate": 0.4,
+      "duration_s": 12.766000000000002,
+      "distance_m": 0.6443930458080879,
+      "vx_error": 0.1371113517565954,
+      "vy_error": 0.10839127838309896,
+      "yaw_rate_error": 0.442891685493095,
+      "mean_tilt_deg": 4.1833173695059624,
+      "joint_tracking_rms": 0.05884682935437267,
+      "action_rate_rms": 0.5467534415759472,
+      "command": [
+        0.1,
+        0,
+        0
+      ]
+    },
+    {
+      "episodes": 10,
+      "fall_rate": 0.5,
+      "duration_s": 12.186,
+      "distance_m": 1.0257194541212038,
+      "vx_error": 0.1563900824183883,
+      "vy_error": 0.12174587238929761,
+      "yaw_rate_error": 0.5075416431350497,
+      "mean_tilt_deg": 4.751647658627674,
+      "joint_tracking_rms": 0.06305005396189892,
+      "action_rate_rms": 0.5534998649819237,
+      "command": [
+        0.15,
+        0,
+        0
+      ]
+    },
+    {
+      "episodes": 10,
+      "fall_rate": 0.7,
+      "duration_s": 10.51,
+      "distance_m": 0.30660677028387207,
+      "vx_error": 0.19734996158645265,
+      "vy_error": 0.09789453681781812,
+      "yaw_rate_error": 0.3915273712599831,
+      "mean_tilt_deg": 6.15078510167149,
+      "joint_tracking_rms": 0.061217860304831374,
+      "action_rate_rms": 0.5247639926287503,
+      "command": [
+        -0.1,
+        0,
+        0
+      ]
+    },
+    {
+      "episodes": 10,
+      "fall_rate": 0.6,
+      "duration_s": 11.14,
+      "distance_m": 0.22287747370716438,
+      "vx_error": 0.15737069081813812,
+      "vy_error": 0.11180707981618651,
+      "yaw_rate_error": 0.20925561583731941,
+      "mean_tilt_deg": 6.2923090106286965,
+      "joint_tracking_rms": 0.02950416345822381,
+      "action_rate_rms": 0.26766376763164607,
+      "command": [
+        0,
+        0.1,
+        0
+      ]
+    },
+    {
+      "episodes": 10,
+      "fall_rate": 0.6,
+      "duration_s": 11.212,
+      "distance_m": 0.21252311185354572,
+      "vx_error": 0.1426780932710893,
+      "vy_error": 0.12500377161100723,
+      "yaw_rate_error": 0.21899982980866417,
+      "mean_tilt_deg": 6.8332885591184835,
+      "joint_tracking_rms": 0.02878103197611962,
+      "action_rate_rms": 0.2653140988846914,
+      "command": [
+        0,
+        -0.1,
+        0
+      ]
+    },
+    {
+      "episodes": 10,
+      "fall_rate": 0.7,
+      "duration_s": 11.406,
+      "distance_m": 0.2778365349108025,
+      "vx_error": 0.11425549117359113,
+      "vy_error": 0.13040942368587663,
+      "yaw_rate_error": 0.4910386319713867,
+      "mean_tilt_deg": 4.647755209259495,
+      "joint_tracking_rms": 0.06405825616598829,
+      "action_rate_rms": 0.5323234240170109,
+      "command": [
+        0,
+        0,
+        0.5
+      ]
+    },
+    {
+      "episodes": 10,
+      "fall_rate": 0.7,
+      "duration_s": 10.886,
+      "distance_m": 0.22645034808458897,
+      "vx_error": 0.17687664707948708,
+      "vy_error": 0.08382761695992524,
+      "yaw_rate_error": 0.4231007318615322,
+      "mean_tilt_deg": 4.65770736897407,
+      "joint_tracking_rms": 0.06397399924189523,
+      "action_rate_rms": 0.532643301410534,
+      "command": [
+        0,
+        0,
+        -0.5
+      ]
+    },
+    {
+      "episodes": 10,
+      "fall_rate": 0.9,
+      "duration_s": 10.096,
+      "distance_m": 0.4705225052746199,
+      "vx_error": 0.22739158005293508,
+      "vy_error": 0.10299719580156516,
+      "yaw_rate_error": 0.5331718493369312,
+      "mean_tilt_deg": 5.360857460155399,
+      "joint_tracking_rms": 0.06065256838970038,
+      "action_rate_rms": 0.5546323182647566,
+      "command": [
+        0.1,
+        0,
+        0.3
+      ]
+    }
+  ],
+  "overall_fall_rate": 0.6333333333333333
+}

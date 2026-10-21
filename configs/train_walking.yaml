@@ -1,0 +1,91 @@
+# M3 — PPO walking: command-conditioned locomotion with an imitation prior.
+# Reward set and command ranges follow the upstream Open Duck Playground
+# joystick task, which is known to transfer to this robot.
+
+env:
+  episode_length: 1000
+  use_reference_motion: true
+  randomization: randomized
+  action_bound: 4.0
+  action:
+    rate_limit: true
+    clip_to_soft_limits: true
+    head_command_offset: true
+
+  commands:
+    resample_steps: 500
+    zero_prob: 0.1
+    head_zero_prob: 0.5
+    lin_vel_x: [-0.15, 0.15]
+    lin_vel_y: [-0.2, 0.2]
+    ang_vel_yaw: [-1.0, 1.0]
+    head:
+      neck_pitch: [-0.34, 1.1]
+      head_pitch: [-0.78, 0.78]
+      head_yaw: [-1.5, 1.5]
+      head_roll: [-0.5, 0.5]
+
+  init:
+    joint_scale: [0.8, 1.2]
+    base_xy: 0.05
+    yaw: 3.14
+    base_vel: 0.05
+
+  noise:
+    level: 1.0
+    joint_pos: {hip: 0.03, knee: 0.05, ankle: 0.08, head: 0.03}
+    joint_vel: 2.5
+    gyro: 0.1
+    accelerometer: 0.05
+    gravity: 0.1
+    action_delay: [0, 2]
+    imu_delay: [0, 2]
+
+  push:
+    enable: true
+    interval_range: [5.0, 10.0]
+    magnitude_range: [0.1, 1.0]
+
+  termination:
+    max_tilt: 1.5708
+    min_height: 0.0
+
+  rewards:
+    clip_min: 0.0
+    scales:
+      tracking_lin_vel: 2.5
+      tracking_ang_vel: 6.0
+      torques: -1.0e-3
+      action_rate: -0.5
+      stand_still: -0.2
+      alive: 20.0
+      imitation: 1.0
+    params:
+      tracking_lin_vel: {sigma: 0.01, y_tol: 0.1}   # tolerates lateral gait sway; y_tol=0 made standing still score as well as walking
+      tracking_ang_vel: {sigma: 0.01}
+
+ppo:
+  total_timesteps: 150_000_000
+  n_envs: 16
+  n_steps: 512
+  batch_size: 2048
+  n_epochs: 5
+  learning_rate: 3.0e-4
+  gamma: 0.97
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.005
+  vf_coef: 0.5
+  max_grad_norm: 1.0
+  target_kl: 0.03
+  log_std_init: -1.0
+  net_arch: {pi: [256, 256, 128], vf: [512, 256, 128]}
+  activation: elu
+  normalize_obs: true
+  seed: 0
+
+# GPU training (scripts/train_mjx.py, Brax PPO). Upstream Open Duck / Playground settings.
+brax_ppo:
+  num_timesteps: 150_000_000
+  num_envs: 8192
+  num_evals: 15

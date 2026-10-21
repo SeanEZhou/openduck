@@ -1,0 +1,5 @@
+MJX-trained standing policy, evaluated in CPU MuJoCo, 20 x 15 s episodes
+nominal                      fall 0.00  dur  15.0s  tilt 2.1°  drift 0.01m
+DR+noise+latency             fall 0.00  dur  15.0s  tilt 2.2°  drift 0.01m
+pushes only (0.05-0.5 m/s)   fall 0.25  dur  13.2s  tilt 2.4°  drift 0.06m
+everything (train dist)      fall 0.25  dur  13.4s  tilt 2.7°  drift 0.06m

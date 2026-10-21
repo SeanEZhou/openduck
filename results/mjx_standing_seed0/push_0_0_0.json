@@ -1,0 +1,15 @@
+{
+  "policy": "results/mjx_standing_seed0/policy.onnx",
+  "cmd": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "success_by_magnitude": {
+    "0.2": 1.0,
+    "0.4": 0.875,
+    "0.6": 0.5,
+    "0.8": 0.375,
+    "1.0": 0.0
+  }
+}
