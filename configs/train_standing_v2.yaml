@@ -1,0 +1,17 @@
+# Standing v2: full upstream head ranges + head tracking, larger pushes, and pose /
+# double-support rewards suspended for 1.5 s after a push so recovery steps are allowed.
+base: configs/train_standing.yaml
+env:
+  commands:
+    head:
+      neck_pitch: [-0.34, 1.1]
+      head_pitch: [-0.78, 0.78]
+      head_yaw: [-1.5, 1.5]
+      head_roll: [-0.5, 0.5]
+  push:
+    magnitude_range: [0.1, 0.8]
+    recovery_window_s: 1.5
+  rewards:
+    scales:
+      head_tracking: -5.0
+    suspend_after_push: [pose, double_support, base_lin_vel_xy]

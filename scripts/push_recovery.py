@@ -43,10 +43,19 @@ def main():
     p.add_argument("--magnitudes", type=float, nargs="+", default=[0.2, 0.4, 0.6, 0.8, 1.0])
     p.add_argument("--directions", type=int, default=8)
     p.add_argument("--cmd", type=float, nargs=3, default=[0, 0, 0])
+    p.add_argument("--latency", action="store_true",
+                   help="0-2 step actuation and IMU latency (as on hardware), no sensor noise")
+    p.add_argument("--randomize", action="store_true",
+                   help="sample physical parameters per trial (configs/randomization.yaml: randomized)")
     p.add_argument("--out")
     a = p.parse_args()
 
-    env = make_env(a.config, {"episode_length": 10**6, "commands": {"resample_steps": 0}, "push": {"enable": False}})
+    ov = {"episode_length": 10**6, "commands": {"resample_steps": 0}, "push": {"enable": False}}
+    if a.latency:
+        ov["noise"] = {"level": 1e-9, "action_delay": [0, 2], "imu_delay": [0, 2]}
+    if a.randomize:
+        ov["randomization"] = "randomized"
+    env = make_env(a.config, ov)
     policy = load_policy(a.policy)
     cmd = np.r_[a.cmd, 0, 0, 0, 0]
     res = {}
@@ -60,7 +69,8 @@ def main():
         res[f"{mag:.1f}"] = float(np.mean(ok))
         print(f"push {mag:.1f} m/s: success {res[f'{mag:.1f}']:.2f}")
     if a.out:
-        Path(a.out).write_text(json.dumps({"policy": a.policy, "cmd": a.cmd, "success_by_magnitude": res}, indent=2))
+        Path(a.out).write_text(json.dumps({"policy": a.policy, "cmd": a.cmd, "latency": a.latency, "randomized": a.randomize,
+                                           "success_by_magnitude": res}, indent=2))
 
 
 if __name__ == "__main__":

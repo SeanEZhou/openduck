@@ -1,0 +1,9 @@
+# Walking v6 = v5 + heading-error cost (straight-line drift) + upstream-like wide initial
+# joint perturbation (x[0.5, 1.5], feet still placed on the ground) as an implicit recovery curriculum.
+base: configs/train_walking_v5.yaml
+env:
+  init:
+    joint_scale: [0.5, 1.5]
+  rewards:
+    scales:
+      heading: -2.0

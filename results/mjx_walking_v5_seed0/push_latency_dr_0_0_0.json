@@ -1,0 +1,17 @@
+{
+  "policy": "results/mjx_walking_v5_seed0/policy.onnx",
+  "cmd": [
+    0,
+    0,
+    0
+  ],
+  "latency": true,
+  "randomized": true,
+  "success_by_magnitude": {
+    "0.2": 0.9375,
+    "0.4": 0.6875,
+    "0.6": 0.46875,
+    "0.8": 0.1875,
+    "1.0": 0.0
+  }
+}

@@ -1,0 +1,8 @@
+# Walking v4 = v3 (configs/train_walking.yaml: upstream reward) with the linear-velocity
+# tracking weight doubled, so small forward commands are worth walking for (v3 stood still
+# for |cmd| <= 0.1 m/s). Originally run as `--set rewards.scales.tracking_lin_vel=5.0`.
+base: configs/train_walking.yaml
+env:
+  rewards:
+    scales:
+      tracking_lin_vel: 5.0

@@ -43,6 +43,12 @@ class RewardContext:
     ref_frame: Any | None
     terminated: Any
     xp: Any = np
+    head_idx: Any = None       # indices of head joints
+    head_target: Any = None    # commanded head joint positions (home + command[3:7])
+    recovering: Any = 0.0      # 1.0 within the post-push recovery window, else 0.0
+    ref_joint_idx: Any = None  # robot joint order -> reference-frame joint index (default: full robot)
+    heading_error: Any = 0.0   # wrapped (yaw - integrated commanded yaw), rad
+    ref_offset: Any = 0.0      # this robot's home minus the reference gaits' home (re-postured variants)
 
     @property
     def moving(self):
@@ -68,6 +74,12 @@ def tracking_lin_vel(c: RewardContext, sigma: float = 0.01, y_tol: float = 0.1, 
 
 def tracking_ang_vel(c: RewardContext, sigma: float = 0.01, **_):
     return c.xp.exp(-((c.command[2] - c.gyro[2]) ** 2) / sigma)
+
+
+def heading(c: RewardContext, **_):
+    """Accumulated heading error vs. the integral of the yaw-rate command. Unlike yaw-rate
+    tracking, a small constant turning bias grows into a large cost."""
+    return c.heading_error**2
 
 
 def orientation(c: RewardContext, **_):
@@ -134,14 +146,20 @@ def double_support(c: RewardContext, **_):
     return c.xp.all(c.feet_contact).astype(c.xp.float32)
 
 
+def head_tracking(c: RewardContext, **_):
+    """Head joints should follow the commanded head pose (not be used as a balance mass)."""
+    return c.xp.sum((c.joint_pos[c.head_idx] - c.head_target) ** 2)
+
+
 def imitation(c: RewardContext, **_):
     """Open Duck / Disney BDX style imitation of polynomial reference gaits (legs only)."""
     xp = c.xp
     if c.ref_frame is None:
         return xp.zeros(())
     f, i = c.ref_frame, c.leg_idx
-    ref_q = ReferenceMotion.joint_pos(f)[i]
-    ref_qd = ReferenceMotion.joint_vel(f)[i]
+    ri = {} if c.ref_joint_idx is None else {"idx": c.ref_joint_idx}
+    ref_q = (ReferenceMotion.joint_pos(f, **ri) + c.ref_offset)[i]
+    ref_qd = ReferenceMotion.joint_vel(f, **ri)[i]
     lin, ang = ReferenceMotion.base_linvel(f), ReferenceMotion.base_angvel(f)
     v, w = c.base_qvel[:3], c.base_qvel[3:]
     r = (
@@ -159,17 +177,21 @@ def imitation(c: RewardContext, **_):
 REWARD_FUNCTIONS = {
     f.__name__: f
     for f in (
-        alive, termination, tracking_lin_vel, tracking_ang_vel, orientation, base_height,
+        alive, termination, tracking_lin_vel, tracking_ang_vel, heading, orientation, base_height,
         lin_vel_z, ang_vel_xy, base_lin_vel_xy, pose, stand_still, torques, action_rate,
-        joint_vel, joint_limits, feet_slip, feet_air_time, double_support, imitation,
+        joint_vel, joint_limits, feet_slip, feet_air_time, double_support, head_tracking, imitation,
     )
 }
 
 
-def compute_rewards(c: RewardContext, scales: dict[str, float], params: dict) -> dict:
+def compute_rewards(c: RewardContext, scales: dict[str, float], params: dict,
+                    suspend_after_push: tuple[str, ...] = ()) -> dict:
+    """Weighted terms. Terms in `suspend_after_push` are zeroed during the post-push recovery
+    window, so e.g. stand-still / pose costs don't forbid a recovery step."""
     out = {}
     for name, w in scales.items():
         if w == 0:
             continue
-        out[name] = w * REWARD_FUNCTIONS[name](c, **params.get(name, {}))
+        v = w * REWARD_FUNCTIONS[name](c, **params.get(name, {}))
+        out[name] = v * (1.0 - c.recovering) if name in suspend_after_push else v
     return out

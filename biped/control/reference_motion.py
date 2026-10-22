@@ -13,8 +13,19 @@ from pathlib import Path
 
 import numpy as np
 
-# Indices of our 14 actuated joints inside the 16-joint reference (antennas at 9, 10 dropped).
+# Joint order of the 16-joint upstream reference frames.
+REF_JOINTS = (
+    "left_hip_yaw", "left_hip_roll", "left_hip_pitch", "left_knee", "left_ankle",
+    "neck_pitch", "head_pitch", "head_yaw", "head_roll", "left_antenna", "right_antenna",
+    "right_hip_yaw", "right_hip_roll", "right_hip_pitch", "right_knee", "right_ankle",
+)
+# Indices of the full robot's 14 actuated joints (antennas dropped).
 _JOINTS_IN_REF = np.r_[0:9, 11:16]
+
+
+def ref_indices(joint_names) -> np.ndarray:
+    """Indices into a reference frame's joint block for the given robot joint order."""
+    return np.array([REF_JOINTS.index(n) for n in joint_names])
 
 
 class ReferenceMotion:
@@ -41,12 +52,12 @@ class ReferenceMotion:
         return c @ (t ** xp.arange(c.shape[1]))
 
     @staticmethod
-    def joint_pos(frame):
-        return frame[0:16][_JOINTS_IN_REF]
+    def joint_pos(frame, idx=_JOINTS_IN_REF):
+        return frame[0:16][idx]
 
     @staticmethod
-    def joint_vel(frame):
-        return frame[16:32][_JOINTS_IN_REF]
+    def joint_vel(frame, idx=_JOINTS_IN_REF):
+        return frame[16:32][idx]
 
     @staticmethod
     def contacts(frame):

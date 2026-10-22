@@ -84,7 +84,7 @@ class RobotSpec:
         return c - r, c + r
 
     def indices(self, group: str) -> np.ndarray:
-        return np.array([i for i, j in enumerate(self.joints) if j.group == group])
+        return np.array([i for i, j in enumerate(self.joints) if j.group == group], dtype=int)
 
     @property
     def leg_indices(self) -> np.ndarray:

@@ -41,6 +41,8 @@ def _ctx(xp, rng, spec, ref):
         feet_contact=xp.asarray([True, False]), feet_linvel=a(2, 3), feet_air_time=xp.asarray([0.3, 0.0]),
         first_contact=xp.asarray([True, False]), soft_lower=xp.asarray(lo), soft_upper=xp.asarray(hi),
         ref_frame=ref.frame(cmd, 5, xp), terminated=xp.asarray(False), xp=xp,
+        head_idx=spec.indices("head"), head_target=xp.asarray(spec.home[spec.indices("head")]) + 0.1,
+        recovering=xp.asarray(1.0),
     )
 
 
@@ -150,3 +152,14 @@ def test_randomization_fn_ranges(env_pair):
     fr = np.asarray(model.geom_friction[:, gpu.floor_geom, 0])
     assert np.all((fr >= cfg["floor_friction"][0]) & (fr <= cfg["floor_friction"][1]))
     assert in_axes.geom_friction == 0 and in_axes.qpos0 is None
+
+
+@pytest.mark.slow
+def test_legs_only_mjx_env_steps():
+    from biped.mjx.env import make_mjx_env
+
+    env = make_mjx_env("configs/train_walking.yaml", {"robot": "configs/robot_legs.yaml"})
+    s = jax.jit(env.reset)(jax.random.PRNGKey(0))
+    assert s.obs["state"].shape == (77,)
+    s = jax.jit(env.step)(s, jp.zeros(10))
+    assert bool(jp.isfinite(s.reward))

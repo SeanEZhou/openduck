@@ -30,8 +30,8 @@ from mujoco_playground._src import mjx_env
 from biped.config import RobotSpec, load_robot, load_yaml
 from biped.control.actions import ActionParams, process_action
 from biped.control.observations import build_observation, gait_phase
-from biped.control.reference_motion import ReferenceMotion
-from biped.envs.locomotion import HEAD_COMMANDS, per_joint_noise
+from biped.control.reference_motion import ReferenceMotion, ref_indices
+from biped.envs.locomotion import HEAD_COMMANDS, per_joint_noise, quat_yaw, reference_home_offset, wrap_angle
 from biped.envs.rewards import RewardContext, compute_rewards
 from biped.hardware.mujoco import MujocoRobot
 
@@ -42,7 +42,7 @@ def _rng(r) -> tuple[float, float]:
 
 class DuckMjxEnv(mjx_env.MjxEnv):
     def __init__(self, env_cfg: dict[str, Any], spec: RobotSpec | None = None):
-        spec = spec or load_robot()
+        spec = spec or load_robot(env_cfg.get("robot", "configs/robot.yaml"))
         super().__init__(config_dict.create(ctrl_dt=spec.control["policy_dt"], sim_dt=spec.control["sim_dt"]))
         self.cfg, self.spec = env_cfg, spec
         cpu = MujocoRobot(spec)
@@ -72,6 +72,10 @@ class DuckMjxEnv(mjx_env.MjxEnv):
         self.hard_lower, self.hard_upper = jp.asarray(spec.lower), jp.asarray(spec.upper)
         self.soft_lower, self.soft_upper = (jp.asarray(x) for x in spec.soft_limits())
         self.leg_idx = np.asarray(spec.leg_indices)
+        self.head_idx = np.asarray(spec.indices("head"), dtype=int)
+        self.ref_joint_idx = ref_indices(spec.joint_names)
+        self.ref_offset = jp.asarray(reference_home_offset(spec))
+        self.recovery_steps = int(round(env_cfg.get("push", {}).get("recovery_window_s", 0.0) / self.dt))
 
         self.noise = env_cfg.get("noise", {})
         self.noise_level = float(self.noise.get("level", 0.0))
@@ -225,6 +229,8 @@ class DuckMjxEnv(mjx_env.MjxEnv):
             "last_contact": jp.zeros(2, dtype=bool),
             "last_action": jp.zeros(self.n),
             "next_push": self._sample_push(k[7], step0),
+            "last_push": jp.asarray(-(10**6), dtype=jp.int32),
+            "heading_target": quat_yaw(jp, qpos[self.bq + 3 : self.bq + 7]),
             "joint_offset": joint_offset,
         }
         obs, info = self._observe(data, info, k[8], init=True)
@@ -254,6 +260,7 @@ class DuckMjxEnv(mjx_env.MjxEnv):
             kick = mag * jp.array([jp.cos(theta), jp.sin(theta)]) * do_push
             data = data.replace(qvel=data.qvel.at[self.bv : self.bv + 2].add(kick))
             info["next_push"] = jp.where(do_push, self._sample_push(k[4], info["step"]), info["next_push"])
+            info["last_push"] = jp.where(do_push, info["step"], info["last_push"])
 
         data = mjx_env.step(self.mjx_model, data, ctrl, self.n_substeps)
         info["step"] = info["step"] + 1
@@ -262,6 +269,8 @@ class DuckMjxEnv(mjx_env.MjxEnv):
         first_contact = (info["feet_air_time"] > 0) & (contact | info["last_contact"])
         air = info["feet_air_time"] + self.dt
         terminated = self._terminated(data)
+        info["heading_target"] = info["heading_target"] + cmd[2] * self.dt
+        heading_error = wrap_angle(jp, quat_yaw(jp, data.qpos[self.bq + 3 : self.bq + 7]) - info["heading_target"])
         ref_frame = self.ref.frame(cmd, info["phase_i"], jp) if self.cfg.get("use_reference_motion") else None
 
         ctx = RewardContext(
@@ -289,9 +298,16 @@ class DuckMjxEnv(mjx_env.MjxEnv):
             ref_frame=ref_frame,
             terminated=terminated,
             xp=jp,
+            head_idx=self.head_idx,
+            head_target=jp.clip(self.home[self.head_idx] + cmd[3 : 3 + len(self.head_idx)], self.soft_lower[self.head_idx],
+                                self.soft_upper[self.head_idx]),
+            recovering=(info["step"] - info["last_push"] <= self.recovery_steps).astype(jp.float32),
+            ref_joint_idx=self.ref_joint_idx,
+            heading_error=heading_error,
+            ref_offset=self.ref_offset,
         )
         rc = self.cfg["rewards"]
-        terms = compute_rewards(ctx, rc["scales"], rc.get("params", {}))
+        terms = compute_rewards(ctx, rc["scales"], rc.get("params", {}), tuple(rc.get("suspend_after_push", ())))
         reward = sum(terms.values()) * self.dt
         if rc.get("clip_min") is not None:
             reward = jp.maximum(reward, rc["clip_min"])

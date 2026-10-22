@@ -4,7 +4,7 @@
         --ours-stand results/mjx_standing_seed0/policy.onnx --out docs/media
 
 Writes standing.gif (head commands while standing), walking.gif (forward then turn)
-and push.gif (identical 0.6 m/s kicks from four directions, outcome labelled).
+and push.gif (identical kicks from four directions in sequence, outcome labelled).
 Both policies always receive identical commands and pushes.
 """
 
@@ -92,7 +92,7 @@ def episode(env, rec, policy, seconds, command_fn, push=None, every=3, freeze_ti
         notes = notes[: i0 + 1]
         notes[-1]["fell"] = True
     # Pad (freeze last frame) so panels in one GIF have equal length.
-    while len(frames) < n // every:
+    while len(frames) < -(-n // every):  # same length as a full episode (ceil(n / every))
         frames.append(frames[-1])
         notes.append(dict(notes[-1], pushing=False))
     return frames, notes, fell
@@ -107,7 +107,8 @@ def annotate(img, title, subtitle, note, push_label=None, verdict=True):
     d.text((8, 23), subtitle, fill=(90, 90, 90), font=font(12))
     d.text((w - 52, 4), f"{note['t']:4.1f}s", fill=(90, 90, 90), font=font(12))
     if push_label and note["pushing"]:
-        d.text((8, im.height - 26), push_label, fill=ACCENT, font=font(16))
+        d.rectangle([4, im.height - 30, 70, im.height - 6], fill=(255, 255, 255))
+        d.text((10, im.height - 27), push_label, fill=ACCENT, font=font(17))
     if verdict and note["fell"]:
         d.text((w - 70, im.height - 26), "FELL", fill=RED, font=font(18))
     elif verdict and push_label and note["after_push"] and not note["pushing"]:
@@ -137,7 +138,7 @@ def save_gif(rows, path, fps=17):
     strip = Image.new("RGB", (sample[0].width, sample[0].height * len(sample)))
     for k, c in enumerate(sample):
         strip.paste(c, (0, k * c.height))
-    palette = strip.quantize(colors=96, method=Image.Quantize.MEDIANCUT)
+    palette = strip.quantize(colors=128, method=Image.Quantize.MEDIANCUT)
     out = [c.quantize(palette=palette, dither=Image.Dither.NONE) for c in canvases]
     out[0].save(path, save_all=True, append_images=out[1:], duration=int(1000 / fps), loop=0, optimize=False)
     print(f"wrote {path} ({Path(path).stat().st_size / 1e6:.1f} MB, {n} frames)")
@@ -145,11 +146,13 @@ def save_gif(rows, path, fps=17):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--ours-walk", default="results/mjx_walking_lin5_seed0/policy.onnx")
-    p.add_argument("--ours-stand", default="results/mjx_standing_seed0/policy.onnx")
+    p.add_argument("--ours-walk", default="results/mjx_walking_v5_seed0/policy.onnx")
+    p.add_argument("--ours-stand", default="results/mjx_standing_v2_seed0/policy.onnx")
+    p.add_argument("--ours-legs", default="results/mjx_walking_legs_v3_seed0/policy.onnx",
+                   help="headless (legs-only) robot policy, for the headless_* GIFs")
     p.add_argument("--upstream", default=UPSTREAM)
     p.add_argument("--out", default="docs/media")
-    p.add_argument("--only", nargs="*", default=["standing", "walking", "push"])
+    p.add_argument("--only", nargs="*", default=["standing", "walking", "push", "headless"])
     a = p.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -191,20 +194,63 @@ def main():
         save_gif([panels], out / "walking.gif")
 
     if "push" in a.only:
-        rec = Recorder(env, 240, 190, distance=1.4, elevation=-12, track=False)
-        directions = [(0, "from behind"), (90, "from right"), (180, "from front"), (270, "from left")]
-        rows = []
-        for title, pol in (("Upstream", up), ("Ours", ours_walk)):
-            row = []
-            for deg, label in directions:
-                frames, notes, fell = episode(env, rec, pol, 5.0, lambda t: np.zeros(7),
-                                              push=(1.5, 0.6, np.radians(deg)))
-                row.append([annotate(f, title, f"0.6 m/s push {label}", n, push_label="PUSH")
+        # One large side-by-side segment per direction, played in sequence. Magnitude per direction:
+        # the largest at which at least one policy recovers (from scripts/push_recovery.py sweeps),
+        # so every segment needs an active stepping response.
+        rec = Recorder(env, 400, 300, distance=1.3, elevation=-12, track=False)
+        directions = [(0, "from behind", 0.8), (90, "from the right", 0.8), (180, "from the front", 0.4),
+                      (270, "from the left", 0.8)]
+        segments = []
+        for deg, label, mag in directions:
+            seg = []
+            for title, pol in ((up_title, up), (ours_title, ours_walk)):
+                frames, notes, fell = episode(env, rec, pol, 4.0, lambda t: np.zeros(7),
+                                              push=(1.0, mag, np.radians(deg)))
+                seg.append([annotate(f, title, f"push {label}, {mag:.1f} m/s", n, push_label="PUSH")
                             for f, n in zip(frames, notes)])
-                print(f"{title:9s} push {label:12s}: {'FELL' if fell else 'recovered'}")
-            rows.append(row)
+                print(f"{title:28s} push {label:15s} {mag:.1f} m/s: {'FELL' if fell else 'recovered'}")
+            segments.append(seg)
         rec.close()
-        save_gif(rows, out / "push.gif")
+        frames_by_panel = [sum((seg[i] for seg in segments), []) for i in range(2)]
+        save_gif([frames_by_panel], out / "push.gif")
+
+    if "headless" in a.only:
+        # Each panel may use a different robot model, so each episode gets its own env and renderer
+        # (closed before the next one is created).
+        ov = {"episode_length": 10**6, "commands": {"resample_steps": 0}, "push": {"enable": False}}
+        setups = [("Upstream (with head)", "configs/eval_baseline.yaml", up),
+                  ("Ours (with head)", "configs/eval_baseline.yaml", ours_walk),
+                  ("Ours headless (10 servos)", "configs/eval_legs.yaml", load_policy(a.ours_legs))]
+        envs = {c: make_env(c, ov) for _, c, _ in setups}
+
+        def run(cfg, pol, w, h, seconds, command_fn, push=None, **rec_kw):
+            rec = Recorder(envs[cfg], w, h, **rec_kw)
+            try:
+                return episode(envs[cfg], rec, pol, seconds, command_fn, push=push)
+            finally:
+                rec.close()
+
+        directions = [(0, "from behind"), (45, "from behind-right"), (135, "from front-right"),
+                      (225, "from front-left"), (315, "from behind-left")]
+        segments = []
+        for deg, label in directions:
+            seg = []
+            for title, cfg, pol in setups:
+                frames, notes, fell = run(cfg, pol, 360, 270, 4.0, lambda t: np.zeros(7),
+                                          push=(1.0, 0.8, np.radians(deg)), distance=1.3, track=False)
+                seg.append([annotate(f, title, f"push {label}, 0.8 m/s", n, push_label="PUSH")
+                            for f, n in zip(frames, notes)])
+                print(f"{title:26s} push {label:18s}: {'FELL' if fell else 'recovered'}")
+            segments.append(seg)
+        save_gif([[sum((seg[i] for seg in segments), []) for i in range(len(setups))]],
+                 out / "headless_push.gif")
+
+        walk = lambda t: np.r_[0.15, 0, 0, 0, 0, 0, 0]  # noqa: E731
+        panels = []
+        for title, cfg, pol in setups[1:]:
+            frames, notes, _ = run(cfg, pol, 360, 270, 8.0, walk, distance=1.0)
+            panels.append([annotate(f, title, "forward 0.15 m/s", n) for f, n in zip(frames, notes)])
+        save_gif([panels], out / "headless_walk.gif")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,4 @@
+# Evaluation of the legs-only robot (same protocol as eval_baseline.yaml).
+base: configs/eval_baseline.yaml
+env:
+  robot: configs/robot_legs.yaml

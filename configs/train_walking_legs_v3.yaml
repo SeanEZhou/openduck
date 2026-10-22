@@ -1,0 +1,8 @@
+# Legs-only v3: the v5 recipe made standing still the safest optimum for this lighter, lower body.
+# Make walking clearly pay: stronger velocity tracking and gait imitation.
+base: configs/train_walking_legs.yaml
+env:
+  rewards:
+    scales:
+      tracking_lin_vel: 10.0
+      imitation: 3.0

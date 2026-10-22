@@ -1,0 +1,6 @@
+# Budget legs-only robot (10 servos, no neck/head; scripts/make_legs_model.py), v5 walking recipe.
+base: configs/train_walking_v5.yaml
+env:
+  robot: configs/robot_legs.yaml
+  commands:
+    head_zero_prob: 1.0     # no head: head command entries stay zero
