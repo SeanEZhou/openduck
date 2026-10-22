@@ -13,6 +13,7 @@ env -u LD_LIBRARY_PATH .venv/bin/python scripts/train_mjx.py --config <config> -
 ```
 
 The version numbers count training recipes within each policy family; the families are numbered independently.
+For what each version taught us, see the [experiment log](../docs/experiments.md).
 
 ## Walking (full robot, 14 servos)
 
@@ -27,7 +28,13 @@ recovery at 0.6 m/s (16 directions, 0–40 ms latency) unless noted. Upstream fo
 | v3 | `mjx_walking_seed0` | `train_walking.yaml` | upstream reward exactly (tolerance restored) | 0.04 / 0.07 / **0.11**; stands for \|cmd\| ≤ 0.1 |
 | v4 | `mjx_walking_lin5_seed0` | `train_walking_v4.yaml` | 2× linear-velocity tracking weight | **0.03** / 0.07 / 0.24; deadzone fixed, heading drift; push 0.50 |
 | v5 | `mjx_walking_v5_seed0` | `train_walking_v5.yaml` | + head-tracking cost, yaw weight 12, stand-still cost paused 1.5 s after pushes | 0.03 / 0.08 / 0.14; head error halved (0.081 rad); push 0.62. **Current best** |
+| v5 s1, s2 | `mjx_walking_v5_seed1`, `mjx_walking_v5_seed2` | `train_walking_v5.yaml --seed 1/2` | seed study | tracking stable; push 0.50 @ 0.6; seed 2 drifts with a −45° bias |
 | v6 | `mjx_walking_v6_seed0` | `train_walking_v6.yaml` | + heading-error cost, joint init ×[0.5, 1.5] | 0.05 / 0.06 / 0.20; deadzone back, push 0.50. Abandoned |
+
+| replica s0, s1 | `mjx_walking_replica_seed0`, `mjx_walking_replica_seed1` | `train_walking_upstream_replica.yaml` (`--seed 1`) | v3 reward in an upstream-like env | 0.03 / 0.08 / 0.04; best turning, straightest walking (15° drift), no deadzone; push 0.50 @ 0.6 |
+
+Pooled push survival (96 trials, `*/push_pooled.json`): all our walking runs 0.55–0.59; upstream
+BEST_WALK 0.76, BEST_WALK_ONNX_2 0.59. See the [seed study](../docs/experiments.md#seed-study).
 
 ## Standing (full robot, 14 servos)
 

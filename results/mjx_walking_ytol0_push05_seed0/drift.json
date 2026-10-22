@@ -1,0 +1,10 @@
+{
+  "policy": "results/mjx_walking_ytol0_push05_seed0/policy.onnx",
+  "vx": 0.15,
+  "episodes": 12,
+  "falls": 0,
+  "mean_deg": -43.6,
+  "std_deg": 46.5,
+  "mean_abs_deg": 51.9,
+  "distance_m": 0.1
+}

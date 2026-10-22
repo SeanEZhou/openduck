@@ -1,0 +1,41 @@
+{
+  "policy": "results/mjx_standing_v2_seed0/policy.onnx",
+  "push_reaction": {
+    "from_behind": {
+      "first_liftoff_s": 0.46,
+      "touchdowns_2s": 3,
+      "foot_travel_m": 0.214,
+      "peak_leg_joint_vel": 1.7,
+      "fell": true
+    },
+    "from_right": {
+      "first_liftoff_s": 0.1,
+      "touchdowns_2s": 4,
+      "foot_travel_m": 0.013,
+      "peak_leg_joint_vel": 1.37,
+      "fell": false
+    },
+    "from_front": {
+      "first_liftoff_s": 0.1,
+      "touchdowns_2s": 4,
+      "foot_travel_m": 0.178,
+      "peak_leg_joint_vel": 1.34,
+      "fell": true
+    }
+  },
+  "drift_0.10": {
+    "heading_change_deg": -90.4,
+    "lateral_m": 0.031,
+    "forward_m": 0.168
+  },
+  "drift_0.15": {
+    "heading_change_deg": -90.4,
+    "lateral_m": 0.031,
+    "forward_m": 0.168
+  },
+  "mirror_asymmetry": {
+    "rms_action_mismatch": 1.265,
+    "action_rms": 1.0,
+    "worst_joint": "left_hip_yaw"
+  }
+}

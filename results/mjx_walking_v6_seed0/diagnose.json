@@ -1,0 +1,41 @@
+{
+  "policy": "results/mjx_walking_v6_seed0/policy.onnx",
+  "push_reaction": {
+    "from_behind": {
+      "first_liftoff_s": 0.4,
+      "touchdowns_2s": 7,
+      "foot_travel_m": 0.227,
+      "peak_leg_joint_vel": 2.06,
+      "fell": true
+    },
+    "from_right": {
+      "first_liftoff_s": null,
+      "touchdowns_2s": 1,
+      "foot_travel_m": 0.012,
+      "peak_leg_joint_vel": 1.21,
+      "fell": false
+    },
+    "from_front": {
+      "first_liftoff_s": 0.26,
+      "touchdowns_2s": 5,
+      "foot_travel_m": 0.126,
+      "peak_leg_joint_vel": 1.9,
+      "fell": true
+    }
+  },
+  "drift_0.10": {
+    "heading_change_deg": 4.2,
+    "lateral_m": 0.001,
+    "forward_m": 0.011
+  },
+  "drift_0.15": {
+    "heading_change_deg": 68.8,
+    "lateral_m": -0.08,
+    "forward_m": 0.789
+  },
+  "mirror_asymmetry": {
+    "rms_action_mismatch": 0.299,
+    "action_rms": 0.475,
+    "worst_joint": "left_ankle"
+  }
+}

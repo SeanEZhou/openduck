@@ -1,0 +1,10 @@
+{
+  "policy": "third_party/Open_Duck_Mini/BEST_WALK_ONNX.onnx",
+  "vx": 0.15,
+  "episodes": 12,
+  "falls": 0,
+  "mean_deg": -26.7,
+  "std_deg": 50.8,
+  "mean_abs_deg": 43.0,
+  "distance_m": 0.82
+}

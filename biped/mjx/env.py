@@ -209,9 +209,10 @@ class DuckMjxEnv(mjx_env.MjxEnv):
             jax.random.uniform(k[4], (6,), minval=-1, maxval=1) * init.get("base_vel", 0.0))
         ctrl = jp.zeros(self.mjx_model.nu).at[self.act_ids].set(q + joint_offset)
         data = mjx.make_data(self.mjx_model).replace(qpos=qpos, qvel=qvel, ctrl=ctrl)
-        # Rest the lower foot on the ground (see DuckEnv.reset).
-        foot_z = mjx.kinematics(self.mjx_model, data).site_xpos[self.foot_sites, 2]
-        data = data.replace(qpos=qpos.at[self.bq + 2].add(self.foot_z_ref - foot_z.min()))
+        # Rest the lower foot on the ground (see DuckEnv.reset); init.ground_feet: false = upstream.
+        if init.get("ground_feet", True):
+            foot_z = mjx.kinematics(self.mjx_model, data).site_xpos[self.foot_sites, 2]
+            data = data.replace(qpos=qpos.at[self.bq + 2].add(self.foot_z_ref - foot_z.min()))
         data = mjx.forward(self.mjx_model, data)
 
         step0 = jp.asarray(0, dtype=jp.int32)

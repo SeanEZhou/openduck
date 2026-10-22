@@ -40,6 +40,7 @@ DEFAULT_PPO = dict(
     num_timesteps=150_000_000, num_envs=8192, batch_size=256, num_minibatches=32, unroll_length=20,
     num_updates_per_batch=4, learning_rate=3e-4, entropy_cost=5e-3, discounting=0.97, clipping_epsilon=0.2,
     max_grad_norm=1.0, reward_scaling=1.0, normalize_observations=True, num_evals=15, num_resets_per_eval=0,
+    full_reset=True,  # False = Playground default used upstream: reset to a cached first state, keep info
     policy_hidden_layer_sizes=[512, 256, 128], value_hidden_layer_sizes=[512, 256, 128],
 )
 
@@ -92,6 +93,7 @@ def main():
     rand_fn = make_randomization_fn(env, env.rand_cfg) if env.rand_cfg.get("enable") else None
     obs_sizes = {k: v[0] for k, v in env.observation_size.items()}
 
+    full_reset = bool(hp.pop("full_reset"))
     net = functools.partial(ppo_networks.make_ppo_networks,
                             policy_hidden_layer_sizes=tuple(hp.pop("policy_hidden_layer_sizes")),
                             value_hidden_layer_sizes=tuple(hp.pop("value_hidden_layer_sizes")),
@@ -121,7 +123,7 @@ def main():
 
     _, params, _ = ppo.train(
         environment=env, eval_env=eval_env, seed=a.seed, network_factory=net, randomization_fn=rand_fn,
-        wrap_env_fn=functools.partial(wrapper.wrap_for_brax_training, full_reset=True),
+        wrap_env_fn=functools.partial(wrapper.wrap_for_brax_training, full_reset=full_reset),
         episode_length=cfg["env"]["episode_length"], progress_fn=progress, policy_params_fn=on_params, **hp,
     )
     save_params(params, run / "params.pkl")

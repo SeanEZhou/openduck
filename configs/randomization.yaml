@@ -18,3 +18,14 @@ randomized:
   kp_scale: [0.9, 1.1]
   torque_limit_scale: [0.9, 1.1]
   joint_offset: [-0.03, 0.03]         # rad, servo zero calibration error
+
+# What upstream's domain_randomize() effectively does. Its joint-offset (qpos0) and torso
+# mass/CoM terms (applied to the massless root body) are inert or near-inert, and it
+# doesn't randomize damping or torque limits, so they're omitted here.
+upstream_like:
+  enable: true
+  floor_friction: [0.5, 1.0]
+  body_mass_scale: [0.9, 1.1]
+  joint_frictionloss_scale: [0.9, 1.1]
+  joint_armature_scale: [1.0, 1.05]
+  kp_scale: [0.9, 1.1]

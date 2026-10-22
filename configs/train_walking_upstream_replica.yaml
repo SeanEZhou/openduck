@@ -1,0 +1,26 @@
+# Walking "replica" (u1): upstream reward (= v3) in an environment that reproduces upstream's
+# Open_Duck_Playground training conditions as closely as our code allows. It isolates whether
+# our environment changes, rather than the reward, explain the gap to BEST_WALK_ONNX.
+#   - randomization: only what upstream's domain_randomize() effectively does
+#   - no IMU latency (upstream's delay buffer held an unused signal); action latency 0-2 kept
+#   - initial joints x[0.5, 1.5] with fixed base height (feet may start inside the floor)
+#   - head commands not added to head targets during training (upstream sim behaviour)
+#   - episodes reset to a cached first state with info carried over, plus 10 full resets per
+#     eval interval (Playground defaults used upstream)
+# Kept from our setup (can't be changed without breaking the deployment contract): the
+# action-history convention of the robot runtime.
+base: configs/train_walking.yaml
+env:
+  randomization: upstream_like
+  noise:
+    imu_delay: [0, 0]
+  init:
+    joint_scale: [0.5, 1.5]
+    ground_feet: false
+  action:
+    head_command_offset: false
+  commands:
+    head_zero_prob: 0.0
+brax_ppo:
+  full_reset: false
+  num_resets_per_eval: 10

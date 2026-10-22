@@ -1,0 +1,17 @@
+{
+  "policy": "third_party/Open_Duck_Mini/BEST_WALK_ONNX_2.onnx",
+  "cmd": [
+    0,
+    0,
+    0
+  ],
+  "latency": true,
+  "randomized": false,
+  "success_by_magnitude": {
+    "0.2": 1.0,
+    "0.4": 0.8125,
+    "0.6": 0.625,
+    "0.8": 0.4375,
+    "1.0": 0.125
+  }
+}

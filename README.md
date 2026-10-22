@@ -38,13 +38,13 @@ uses its walking policy at zero velocity command.
 
 ### Results (CPU MuJoCo, nominal model)
 
-| policy | falls | vx err | vy err | yaw-rate err | heading drift, 10 s straight (0.1 / 0.15 m/s) | head-command err |
+| policy | falls | vx err | vy err | yaw-rate err | heading drift, 10 s straight, nominal model (0.1 / 0.15 m/s)* | head-command err |
 |---|---|---|---|---|---|---|
 | upstream | 0 % | 0.03 | 0.08 | **0.12** | **−12° / +6°** | 0.156 rad |
 | ours v4 (2× velocity tracking) | 0 % | 0.03 | **0.07** | 0.24 | −9° / −31° | 0.155 rad |
 | ours v5 (+ head tracking, yaw re-weighting, push recovery window) | 0 % | 0.03 | 0.08 | 0.14 | +52° / +12° | **0.081 rad** |
 
-Velocity errors are RMS in m/s and rad/s, mean over 9 commands in 15 s episodes.
+Velocity errors are RMS in m/s and rad/s, mean over 9 commands in 15 s episodes. *One nominal episode is a single sample of a wide spread; over randomized episodes the mean |drift| is upstream 43°, v4 57°, v5 24°, replica 15°.
 
 Push recovery: success rate for one planar kick, 16 directions, with 0–40 ms actuation and IMU
 latency (as on hardware), standing command:
@@ -70,8 +70,8 @@ What we've learned so far:
   that start the feet inside the floor, not a physics gap. Fixed: 0 %.
 - **Budget variant without the head** (10 servos): see [below](#headless-budget-robot).
 
-These are single-seed results. Raw numbers are in `results/*/eval_*.json` and `results/*/push_*.json`;
-training curves are in `results/*/progress.jsonl`.
+These are single-seed results. Every model and what it taught us is in the
+[experiment log](docs/experiments.md); raw numbers are in `results/` ([index](results/README.md)).
 
 ## Headless budget robot
 
@@ -124,21 +124,14 @@ The environment differs on purpose:
 | action history / head commands / rate limit | differ between training and the robot runtime | identical by construction |
 | head commands (v5) | not rewarded | head-tracking cost |
 
-Why is upstream still more push-robust and better at heading? What the experiments rule out so far:
-
-- **Not the reward weights alone.** v3 uses upstream's reward terms and weights unchanged and is
-  still less push-robust (0.50 vs 0.75 success at 0.6 m/s).
-- **Not upstream being tuned to the nominal model.** Upstream's randomization was mostly inert, and
-  the benchmark above uses the nominal model, i.e. upstream's best case. But with randomized dynamics
-  *and* latency on every trial, upstream still leads: 0.72 vs 0.47–0.50 at 0.6 m/s (32 trials per
-  magnitude, `results/*/push_latency_dr_*.json`).
-- **Not latency.** The gap is the same with and without 0–40 ms actuation/IMU delay.
-
-Still open: (a) seed and selection variance. Upstream's policy is named "BEST" and came out of weeks
-of tuning runs; ours is one seed per variant. (b) Our harder training environment (real IMU
-latency, calibration offsets, damping/torque randomization, full resets) may push PPO towards a
-more conservative policy. Two experiments separate these: 3 seeds of v3, and an unmodified run of
-upstream's own training pipeline.
+Why is upstream more push-robust? Pooled over 96 pushes per policy, **all six of our walking runs
+score 0.55–0.59, the same as the author's second published policy (0.59)**. Only BEST_WALK
+reaches 0.76. That isolates the gap to that one exceptional run, a selected outlier or a run with
+an unpublished config, rather than our reward or environment. We tested the alternatives directly:
+same reward (v3), randomized physics, latency, more seeds, and a run reproducing upstream's
+training environment (the replica). None of them changes the score. Heading drift, on the other
+hand, is mostly random: over randomized episodes upstream drifts 43° per 10 s, v5 24° and the
+replica 15°. Details: [experiment log](docs/experiments.md).
 
 On head motion: upstream *overdoes* head commands. Its neck reaches 0.95 rad when commanded
 0.70 (+0.22 rad mean bias backward). It uses the head as a balance weight, so the larger head

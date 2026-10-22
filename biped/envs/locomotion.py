@@ -132,7 +132,9 @@ class DuckEnv(gym.Env):
         )
         # Rest the lower foot on the ground: perturbed joint angles change the leg length, and a
         # fixed base height would start the feet up to ~1 cm inside the floor (violent ejection).
-        r.data.qpos[r.base_qpos_adr + 2] += self.foot_z_ref - r.min_foot_site_z(r.data.qpos)
+        # (init.ground_feet: false reproduces upstream, which keeps the base height fixed.)
+        if init.get("ground_feet", True):
+            r.data.qpos[r.base_qpos_adr + 2] += self.foot_z_ref - r.min_foot_site_z(r.data.qpos)
         r.set_base_vel(rng.uniform(-1, 1, 6) * init.get("base_vel", 0.0))
         r.data.ctrl[r.actuator_ids] = q + self.randomizer.joint_offset
         r.forward()
