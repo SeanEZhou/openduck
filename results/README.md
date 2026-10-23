@@ -1,6 +1,6 @@
 # Results index
 
-Every policy here was trained **from scratch** with GPU training (`scripts/train_mjx.py`: MJX +
+Every policy here was trained **from scratch** (except v7f, fine-tuned from v5) with GPU training (`scripts/train_mjx.py`: MJX +
 Brax PPO, 8192 envs, seed 0; walking 150M steps, standing 50M). No run is warm-started from
 another. Each folder holds the config snapshot (`config.yaml`), training curve (`progress.jsonl`),
 the exported policy (`policy.onnx`, obs → 14 or 10 servo targets) and evaluation JSONs.
@@ -27,11 +27,12 @@ recovery at 0.6 m/s (16 directions, 0–40 ms latency) unless noted. Upstream fo
 | v2 | `mjx_walking_ytol0_push05_seed0` | v1 + `--set "push.magnitude_range=[0.1,0.5]"` | training pushes capped at 0.5 m/s | 0.06 / 0.04 / 0.17; same deadzone |
 | v3 | `mjx_walking_seed0` | `train_walking.yaml` | upstream reward exactly (tolerance restored) | 0.04 / 0.07 / **0.11**; stands for \|cmd\| ≤ 0.1 |
 | v4 | `mjx_walking_lin5_seed0` | `train_walking_v4.yaml` | 2× linear-velocity tracking weight | **0.03** / 0.07 / 0.24; deadzone fixed, heading drift; push 0.50 |
-| v5 | `mjx_walking_v5_seed0` | `train_walking_v5.yaml` | + head-tracking cost, yaw weight 12, stand-still cost paused 1.5 s after pushes | 0.03 / 0.08 / 0.14; head error halved (0.081 rad); push 0.62. **Current best** |
+| v5 | `mjx_walking_v5_seed0` | `train_walking_v5.yaml` | + head-tracking cost, yaw weight 12, stand-still cost paused 1.5 s after pushes | 0.03 / 0.08 / 0.14; head error halved (0.081 rad); push 0.62. Best tracking |
 | v5 s1, s2 | `mjx_walking_v5_seed1`, `mjx_walking_v5_seed2` | `train_walking_v5.yaml --seed 1/2` | seed study | tracking stable; push 0.50 @ 0.6; seed 2 drifts with a −45° bias |
 | v6 | `mjx_walking_v6_seed0` | `train_walking_v6.yaml` | + heading-error cost, joint init ×[0.5, 1.5] | 0.05 / 0.06 / 0.20; deadzone back, push 0.50. Abandoned |
-
-| replica s0, s1 | `mjx_walking_replica_seed0`, `mjx_walking_replica_seed1` | `train_walking_upstream_replica.yaml` (`--seed 1`) | v3 reward in an upstream-like env | 0.03 / 0.08 / 0.04; best turning, straightest walking (15° drift), no deadzone; push 0.50 @ 0.6 |
+| replica s0, s1 | `mjx_walking_replica_seed0`, `mjx_walking_replica_seed1` | `train_walking_upstream_replica.yaml` (`--seed 1`) | v3 reward in an upstream-like env | 0.03 / 0.08 / 0.04; best turning, straightest walking (15° drift), no deadzone; push 0.50 @ 0.6; but falls 7–15 % under realistic conditions (`eval_walk_realistic.json`) |
+| v7a–v7g | `mjx_walking_v7{a..g}_seed0` | `train_walking_v7{a..g}.yaml` (v7f: `--init-from results/mjx_walking_v5_seed0/params.pkl`) | push series: one change each from v5 (see each config) | pooled push (`push_bench.json`) v7b **0.64 / 0.56** nominal / realistic vs. v5 0.56 / 0.49; others unchanged or worse; v7c doesn't walk. v7b: **best push-robust walker** |
+| v8 | `mjx_walking_v8_seed0` | `train_walking_v8.yaml` | v7b + v7g | doesn't walk; push 0.64 / 0.56 |
 
 Pooled push survival (96 trials, `*/push_pooled.json`): all our walking runs 0.55–0.59; upstream
 BEST_WALK 0.76, BEST_WALK_ONNX_2 0.59. See the [seed study](../docs/experiments.md#seed-study).
@@ -60,6 +61,7 @@ hip-pitch/ankle home values in `configs/robot_legs.yaml`.
 ## Baselines and benchmarks
 
 - `baseline_BEST_WALK_ONNX*_{nominal,randomized}.json`: upstream policies under `scripts/evaluate.py`.
+- `push_bench_*.json`, `*/push_bench.json`: `scripts/push_benchmark.py` (pooled, nominal and realistic).
 - `push_baseline_*.json`, `*/push_*.json`: `scripts/push_recovery.py`. The suffix `latency` adds
   0–40 ms actuation/IMU delay; `latency_dr` also randomizes physics per trial.
 - `baseline_ablation.txt`, `*/ablation_cpu.txt`: which perturbations cause falls.

@@ -131,7 +131,17 @@ an unpublished config, rather than our reward or environment. We tested the alte
 same reward (v3), randomized physics, latency, more seeds, and a run reproducing upstream's
 training environment (the replica). None of them changes the score. Heading drift, on the other
 hand, is mostly random: over randomized episodes upstream drifts 43° per 10 s, v5 24° and the
-replica 15°. Details: [experiment log](docs/experiments.md).
+replica 15°. The replica walks best on the nominal model but falls 7–15 % of the time under
+combined realistic imperfections, against 0–2 % for our harder-trained policies. That's the
+trade-off our harder environment was designed for. Details: [experiment log](docs/experiments.md).
+
+Push series (v7–v8): eight runs, each aimed at push recovery, scored on 192–384 pooled pushes in a
+nominal and a realistic condition (randomized physics, noise, latency). Upstream BEST_WALK scores
+**0.74 / 0.69**, v5 0.56 / 0.49. The one change that helps is **pausing the movement costs after a
+push** (v7b: **0.64 / 0.56**, walking intact), and all of its gain is on 0.4 m/s pushes. More pushes,
+a push-heavy fine-tune, a fall penalty, a longer discount horizon and a shaped recovery reward didn't
+help or made it worse. Every policy still fails pushes straight from behind, which BEST_WALK
+survives. See the [push series](docs/experiments.md#push-series-v7-methods-aimed-at-push-recovery).
 
 On head motion: upstream *overdoes* head commands. Its neck reaches 0.95 rad when commanded
 0.70 (+0.22 rad mean bias backward). It uses the head as a balance weight, so the larger head
@@ -196,7 +206,7 @@ tests/                         model/joint-sign checks, contract, env, CPU↔MJX
 | M0 platform selection | Open Duck Mini v2 locked ([decision record](docs/platform_selection.md)); price re-check and 2-servo bench test pending |
 | M1 simulation foundation | done |
 | M2 standing | done in sim: 0 % falls with randomization, noise and latency; follows head commands |
-| M3 walking | matches upstream nominal tracking; next: heading drift, push recovery, multi-seed, unmodified upstream-pipeline run |
+| M3 walking | matches upstream nominal tracking; push series: v7b closes ~40 % of the push gap (0.64 vs upstream 0.74); next: forward-push recovery |
 | Budget legs-only variant | model + re-balanced posture done; balances well but only shuffles (3 attempts); next: reference gaits regenerated for the lighter body |
 | M4 hardware characterization | build robot ([build guide](docs/build_guide.md)), calibrate joints, identify servo response |
 | M5–M6 tethered → free walking | deploy through `scripts/deploy.py` hardware backend |

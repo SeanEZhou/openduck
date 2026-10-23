@@ -1,0 +1,7 @@
+# Walking v7b (push series, round 1) = v5 + every cost that limits fast leg motion is paused
+# during the 1.5 s after a push (action rate, torques, imitation), not just stand-still.
+# Hypothesis: these costs make the vigorous recovery steps seen in upstream BEST_WALK too expensive.
+base: configs/train_walking_v5.yaml
+env:
+  rewards:
+    suspend_after_push: [stand_still, action_rate, torques, imitation]

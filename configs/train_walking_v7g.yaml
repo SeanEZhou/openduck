@@ -1,0 +1,7 @@
+# Walking v7g (push series) = v5 with half of all commands at zero velocity (was 10 %).
+# Hypothesis: pushes mostly land mid-walk in training, so the standing push response (what the
+# benchmark tests, and the first thing a real robot meets) gets only ~10 % of the push data.
+base: configs/train_walking_v5.yaml
+env:
+  commands:
+    zero_prob: 0.5

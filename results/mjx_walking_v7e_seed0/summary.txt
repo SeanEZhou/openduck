@@ -1,0 +1,4 @@
+nominal   pooled 0.41 ± 0.04  0.4: 0.77  0.6: 0.45  0.8: 0.00
+realistic pooled 0.42 ± 0.04  0.4: 0.80  0.6: 0.42  0.8: 0.03
+walk nominal   falls 0.00  vx/vy/wz err 0.020/0.106/0.146
+walk realistic falls 0.04  vx/vy/wz err 0.068/0.097/0.175

@@ -1,0 +1,28 @@
+{
+  "policy": "third_party/Open_Duck_Mini/BEST_WALK_ONNX.onnx",
+  "cmd": [
+    0,
+    0,
+    0
+  ],
+  "nominal": {
+    "pooled": 0.745,
+    "se": 0.031,
+    "trials": 192,
+    "by_magnitude": {
+      "0.4": 0.922,
+      "0.6": 0.719,
+      "0.8": 0.594
+    }
+  },
+  "realistic": {
+    "pooled": 0.656,
+    "se": 0.034,
+    "trials": 192,
+    "by_magnitude": {
+      "0.4": 0.891,
+      "0.6": 0.641,
+      "0.8": 0.438
+    }
+  }
+}

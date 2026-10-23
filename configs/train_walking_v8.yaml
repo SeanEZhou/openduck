@@ -1,0 +1,7 @@
+# Walking v8 = v7b + v7g, the two push-series changes that helped (each ~2 SE on one benchmark):
+#  - action-rate, torque and imitation costs paused for 1.5 s after a push (v7b), and
+#  - half of all commands at zero velocity, so more pushes land while standing (v7g).
+base: configs/train_walking_v7b.yaml
+env:
+  commands:
+    zero_prob: 0.5

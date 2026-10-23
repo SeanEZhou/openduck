@@ -76,6 +76,14 @@ def tracking_ang_vel(c: RewardContext, sigma: float = 0.01, **_):
     return c.xp.exp(-((c.command[2] - c.gyro[2]) ** 2) / sigma)
 
 
+def push_recovery(c: RewardContext, sigma: float = 0.25, **_):
+    """After a push, reward shedding the excess velocity. Unlike tracking_lin_vel (sigma 0.01,
+    flat at zero for errors above ~0.2 m/s), the wide kernel still has a gradient right after a
+    0.5-1 m/s kick. Zero outside the post-push recovery window."""
+    xp = c.xp
+    return xp.exp(-xp.sum((c.local_linvel[:2] - c.command[:2]) ** 2) / sigma) * c.recovering
+
+
 def heading(c: RewardContext, **_):
     """Accumulated heading error vs. the integral of the yaw-rate command. Unlike yaw-rate
     tracking, a small constant turning bias grows into a large cost."""
@@ -177,7 +185,7 @@ def imitation(c: RewardContext, **_):
 REWARD_FUNCTIONS = {
     f.__name__: f
     for f in (
-        alive, termination, tracking_lin_vel, tracking_ang_vel, heading, orientation, base_height,
+        alive, termination, tracking_lin_vel, tracking_ang_vel, push_recovery, heading, orientation, base_height,
         lin_vel_z, ang_vel_xy, base_lin_vel_xy, pose, stand_still, torques, action_rate,
         joint_vel, joint_limits, feet_slip, feet_air_time, double_support, head_tracking, imitation,
     )

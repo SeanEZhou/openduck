@@ -35,6 +35,8 @@ def main():
     p.add_argument("--episodes", type=int, default=3, help="episodes per command")
     p.add_argument("--steps", type=int, default=750, help="max control steps per episode")
     p.add_argument("--randomize", action="store_true", help="enable DR, noise and pushes")
+    p.add_argument("--realistic", action="store_true",
+                   help="randomized physics, sensor noise and latency, but no random pushes")
     p.add_argument("--out", help="write JSON results here")
     p.add_argument("--video", help="record the first episode to this .mp4")
     a = p.parse_args()
@@ -46,6 +48,8 @@ def main():
             "noise": {"level": 1.0},
             "push": {"enable": True},
         })
+    if a.realistic:
+        overrides.update({"randomization": "randomized", "noise": {"level": 1.0}, "push": {"enable": False}})
     env = make_env(a.config, overrides, render_mode="rgb_array" if a.video else None)
     policy = load_policy(a.policy)
 
@@ -73,6 +77,7 @@ def main():
         "policy": a.policy,
         "config": a.config,
         "randomized": a.randomize,
+        "realistic": a.realistic,
         "per_command": per_command,
         "overall_fall_rate": float(np.mean([s["fall_rate"] for s in per_command])),
     }

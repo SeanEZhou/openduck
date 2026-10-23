@@ -66,6 +66,7 @@ def main():
     p.add_argument("--num-evals", type=int)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--set", nargs="*", default=[], help="env overrides, e.g. push.enable=false")
+    p.add_argument("--init-from", help="params.pkl to warm-start from (policy, value and normalizer)")
     p.add_argument("--validate", default=None, choices=["stand", "walk"], help="CPU validation command set")
     a = p.parse_args()
 
@@ -79,11 +80,17 @@ def main():
     if a.num_evals:
         hp["num_evals"] = a.num_evals
 
+    if a.init_from:
+        from biped.mjx.export import load_params
+
+        hp["restore_params"] = load_params(a.init_from)
     run = Path(a.run)
     run.mkdir(parents=True, exist_ok=True)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip() or None
-    (run / "config.yaml").write_text(yaml.safe_dump({**cfg, "brax_ppo": hp, "source_config": a.config,
-                                                     "seed": a.seed, "git_commit": commit}))
+    saved_hp = {k: v for k, v in hp.items() if k != "restore_params"}
+    (run / "config.yaml").write_text(yaml.safe_dump({**cfg, "brax_ppo": saved_hp, "source_config": a.config,
+                                                     "seed": a.seed, "init_from": a.init_from,
+                                                     "git_commit": commit}))
 
     jax.config.update("jax_compilation_cache_dir", str(ROOT / ".jax_cache"))
     jax.config.update("jax_persistent_cache_min_compile_time_secs", 1)

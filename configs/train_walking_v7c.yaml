@@ -1,0 +1,6 @@
+# Walking v7c (push series, round 1) = v5 with a longer discount horizon (gamma 0.99, ~2 s
+# instead of 0.97, ~0.7 s). Hypothesis: a fall 0.5-1 s after a push is barely visible to the
+# value function at gamma 0.97, so recovery steps are weakly credited.
+base: configs/train_walking_v5.yaml
+brax_ppo:
+  discounting: 0.99

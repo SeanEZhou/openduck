@@ -1,0 +1,9 @@
+# Walking v7d (push series, round 1) = v5 + an explicit fall penalty. With clip_min 0 a
+# termination penalty is clipped away, so falling only costs the lost alive bonus; here the
+# clip is removed and a fall costs about as much again (-500 x dt = -10 ~ 25 steps of alive).
+base: configs/train_walking_v5.yaml
+env:
+  rewards:
+    clip_min: null
+    scales:
+      termination: -500.0

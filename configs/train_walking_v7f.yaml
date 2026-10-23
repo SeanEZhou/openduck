@@ -1,0 +1,9 @@
+# Walking v7f (push series, round 2) = fine-tune v5 for 50M steps with v7a's push schedule
+# (2.5x more, slightly stronger pushes). Run with --init-from results/mjx_walking_v5_seed0/params.pkl.
+# Hypothesis: a push-heavy finishing phase on a policy that already walks (a curriculum) beats
+# training on push-heavy data from scratch, and may be how BEST_WALK was obtained (upstream
+# supports restoring checkpoints).
+base: configs/train_walking_v7a.yaml
+brax_ppo:
+  num_timesteps: 50_000_000
+  num_evals: 6

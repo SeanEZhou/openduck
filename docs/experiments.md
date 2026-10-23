@@ -1,7 +1,7 @@
 # Experiment log
 
 Every model trained in this project and what it taught us. All policies are trained from scratch
-(no warm starts) with seed 0. Run folders, configs and reproduction commands are in
+with seed 0, except v7f (fine-tuned from v5) and the seed-study runs. Run folders, configs and reproduction commands are in
 [results/README.md](../results/README.md).
 
 ## Evaluation protocol
@@ -13,6 +13,8 @@ All evaluation runs in CPU MuJoCo, i.e. a different simulator from MJX training.
 | **Tracking** | RMS velocity error (vx m/s / vy m/s / yaw-rate rad/s), mean over 9 commands, nominal model, 15 s episodes | `scripts/evaluate.py` |
 | **Push survival** | single planar kick at zero command, 16 directions, 0–40 ms actuation/IMU latency; success at 0.6 / 0.8 m/s | `scripts/push_recovery.py --latency` |
 | **Reaction** | time from a 0.6 m/s push from behind to the first foot lift-off (median over 16 pushes in brackets) | `scripts/diagnose.py` |
+| **Pooled push** | 64 directions × 0.4 / 0.6 / 0.8 m/s at zero command (192 trials, 384 for finalists); *nominal* = latency only, *realistic* = + randomized physics and noise | `scripts/push_benchmark.py` |
+| **Realistic tracking** | as Tracking, with randomized physics, sensor noise and 0–40 ms latency, no pushes; 6 episodes per command | `scripts/evaluate.py --realistic` |
 | **Drift** | mean \|heading change\| over 10 s walking straight at 0.15 m/s, 12 episodes with randomized physics, latency and noise; distance covered in brackets | `scripts/drift_distribution.py` |
 | **Head** | RMS error between head joints and commanded head pose (neck pitch + head yaw sweep) | |
 
@@ -36,8 +38,16 @@ All evaluation runs in CPU MuJoCo, i.e. a different simulator from MJX training.
 | Headless v2 | v1 with home pose leaned 0.1 rad forward | stands | 0.75 / 0.50 | – | – | n/a | doesn't walk |
 | **Headless v3** | v2 + 2× tracking, 3× imitation | shuffles ~0.02 m/s | 0.69 / **0.62** | 0.42 s | – | n/a | balances, doesn't walk |
 | Walking v5, seeds 1 / 2 | v5 recipe, different random seeds | 0.03 / 0.06 / 0.10, 0.03 / 0.07 / 0.10 | 0.50 / 0.31, 0.50 / 0.38 | – | 24°, 45° (biased −45°) | – | seed spread: tracking stable, drift bias is seed-dependent |
-| Walking replica (u1) | v3 reward in an env reproducing upstream's training conditions (see below) | 0.03 / 0.08 / **0.04** | 0.50 / 0.31 | 0.36 s (median 0.22) | **15°** [0.99 m] | – | best turning and straightest walking; no deadzone; pushes unchanged |
+| Walking replica (u1) | v3 reward in an env reproducing upstream's training conditions (see below) | 0.03 / 0.08 / **0.04** | 0.50 / 0.31 | 0.36 s (median 0.22) | **15°** [0.99 m] | – | best on the nominal model and in straight-line drift, but **falls 15 % under realistic conditions** (ours: 0–2 %); pushes unchanged |
 | Walking replica, seed 1 | replica, different seed | 0.02 / 0.12 / 0.05 | 0.50 / 0.31 | – | 15° [0.87 m] | – | reproduces seed 0 |
+| Walking v7a | v5 + pushes every 2–5 s, up to 1.2 m/s | 0.03 / 0.08 / 0.17 | 0.66 / 0.17 | – | – | – | pooled push unchanged |
+| **Walking v7b** | v5 + action-rate, torque and imitation costs also paused 1.5 s after pushes | 0.03 / 0.07 / 0.14 | 0.58 / 0.31 | – | – | – | **pooled push 0.64 / 0.56 (v5 0.56 / 0.49); best push-robust walker** |
+| Walking v7c | v5 + discount 0.99 | 0.07 / 0.05 / 0.37 | 0.52 / 0.33 | – | – | – | stops walking |
+| Walking v7d | v5 + fall penalty, no reward clip | 0.04 / 0.06 / 0.14 | 0.61 / 0.34 | – | – | – | no change; deadzone back |
+| Walking v7e | v5 + post-push velocity reward | 0.02 / 0.11 / 0.15 | 0.45 / 0.00 | – | – | – | worse |
+| Walking v7f | v5 fine-tuned 50M steps with v7a's pushes | 0.03 / 0.08 / 0.15 | 0.56 / 0.31 | – | – | – | no change |
+| Walking v7g | v5 + 50 % zero commands | 0.03 / 0.07 / 0.27 | 0.52 / 0.39 | – | – | – | realistic push 0.56, turning worse |
+| Walking v8 | v7b + v7g | 0.05 / 0.04 / 0.15 | 0.58 / 0.39 | – | – | – | stops walking; push no better than v7b |
 
 ## Key findings
 
@@ -46,6 +56,7 @@ What worked:
 - **Doubling the velocity-tracking weight** (v4) fixed the "standing is safer than walking" deadzone for small commands and gave longer strides.
 - **A head-tracking cost** (v5, standing v2) made the head follow commands about 2× more closely than upstream. Upstream overshoots the neck command by about 0.2 rad because it uses the head as a balance weight.
 - **Restoring the yaw:velocity weight ratio** (v5) gave the straightest walking under randomized conditions: about half of upstream's drift, at 1.5× the distance.
+- **Pausing the movement costs (action rate, torques, imitation) after a push** (v7b) raised pooled push survival from 0.56 to 0.64 nominal and 0.49 to 0.56 realistic (~2 SE), all of it at 0.4 m/s, with walking intact.
 - **A forward-leaning home pose** made the headless robot stand passively. The upstream pose tips it over backward.
 
 What didn't work:
@@ -53,6 +64,7 @@ What didn't work:
 - **Capping training pushes** (v2) didn't help push survival or walking.
 - **A heading-error cost plus a wider initial pose** (v6) regressed everything. The robot can't observe its absolute heading, so the cost is noise to it.
 - **Reusing the full robot's recipe and reference gaits on the headless robot** (headless v1–v3): it balances but won't walk.
+- **Push-recovery methods other than v7b** (push series, below): more pushes (v7a), a push-heavy fine-tune (v7f), a fall penalty (v7d) and a longer horizon (v7c) didn't move pooled push survival; a shaped post-push reward (v7e) made it worse; more standing time (v7g, v8) traded walking for at most a small gain.
 - **Reward tuning so far hasn't touched the push gap.** v1–v6 and both standing versions survive 0.6 m/s pushes 50–62 % of the time, against upstream's 75 %.
 
 What the measurements say about the two open weaknesses:
@@ -61,7 +73,7 @@ What the measurements say about the two open weaknesses:
 - **The push gap is not explained by** the reward weights (v3 uses upstream's), nominal-model tuning (upstream still leads with randomized physics on every trial), evaluation latency, or upstream's training environment (the replica u1 reproduces it and pushes don't improve).
 - **Seed-to-seed variance:** tracking and push survival are stable across seeds. Heading drift isn't: v5 seed 2 has a consistent −45° bias per 10 s while seeds 0 and 1 drift 24°. A seed-dependent bias is one more reason to train several seeds and select.
 - **Drift is mostly random, not a fixed bias.** A single nominal-model episode is one sample from a wide spread: over randomized episodes upstream drifts 43° ± 51° per 10 s, v5 24° ± 25° and the replica 15° ± 18°. Policy mirror asymmetry doesn't predict drift.
-- **Our harder environment caused the walking deadzone.** With the identical reward, v3 (our env) ignores 0.1 m/s commands and the replica (upstream-like env) doesn't. The extra randomization and latency make walking riskier, so PPO prefers to stand.
+- **Our harder environment caused the walking deadzone, and it also buys robustness.** With the identical reward, v3 (our env) ignores 0.1 m/s commands and the replica (upstream-like env) doesn't. The extra randomization and latency make walking riskier, so PPO prefers to stand. But under realistic conditions the replica falls 7–15 % of the time against v3's 0 %. No single imperfection causes it; their combination does.
 
 ## Replica experiment (u1): reproducing upstream's training environment
 
@@ -78,10 +90,27 @@ our code allows (`configs/train_walking_upstream_replica.yaml`):
 | head command sampling | independent of velocity command | zeroed together with velocity 10 % of the time |
 | action-history convention | robot runtime's | unchanged: it's part of the deployment contract |
 
-Result: same push survival as our other policies (0.50 / 0.31), but the best turning (yaw-rate
-error 0.04 vs upstream 0.12), the straightest walking (15° ± 18° per 10 s) and no deadzone.
-Upstream's training environment therefore isn't what makes BEST_WALK more push-robust; it does
-explain the deadzone. Next: more seeds, to measure run-to-run variance directly.
+Result on the nominal model: same push survival as our other policies (0.50 / 0.31), but the best
+turning (yaw-rate error 0.04 vs upstream 0.12), the straightest walking (15° ± 18° per 10 s) and no
+deadzone. Upstream's training environment therefore isn't what makes BEST_WALK more push-robust;
+it does explain the deadzone.
+
+**Under realistic conditions the replica is the most fragile policy** (`scripts/evaluate.py --realistic`;
+randomized physics, sensor noise, 0–40 ms latency, no pushes; mean over 9 commands):
+
+| | upstream | v3 | v5 | replica s0 | replica s1 |
+|---|---|---|---|---|---|
+| falls | 2 % | **0 %** | 2 % | 15 % | 7 % |
+| vx error | 0.04 | 0.04 | 0.05 | 0.11 | 0.12 |
+| yaw-rate error | 0.25 | 0.17 | 0.19 | 0.16 | 0.15 |
+
+It falls in up to half of the turn-in-place episodes. One factor at a time (`scripts/realism_ablation.py`;
+turn ±0.5 rad/s and forward 0.15 m/s, 30 episodes each), latency, sensor noise, calibration offsets,
+trunk mass/CoM shifts, and damping + torque-limit changes each cause 0 falls. Only their
+**combination** does: 20–30 % for the replica, 0 % for v3 and upstream. So the trade-off is real:
+the easier environment buys smoother nominal walking and loses robustness to compounded
+real-world imperfections, which is exactly what our harder environment was built for.
+Upstream's BEST_WALK has both, one more sign that it's an exceptional run.
 
 ## Seed study
 
@@ -105,3 +134,83 @@ recovery rather than more reward re-weighting. Candidates, in order:
    direction), since step vigor is the measured difference from BEST_WALK.
 3. **Train N seeds and select the best by pooled push survival**, which is plausibly how BEST_WALK
    was obtained.
+
+## Push series (v7): methods aimed at push recovery
+
+Benchmark (`scripts/push_benchmark.py`, `*/push_bench.json`): standing robot, kicked at t = 3 s
+in 64 directions at 0.4, 0.6 and 0.8 m/s (192 trials, ± 0.03–0.04); success = no fall in 3 s.
+**Nominal** = nominal physics + 0–40 ms latency (the seed-study protocol). **Realistic** = also
+randomized physics and sensor noise, re-sampled per trial.
+
+Baselines, nominal / realistic:
+
+| policy | nominal | realistic |
+|---|---|---|
+| upstream BEST_WALK (target) | **0.74** | **0.66** |
+| upstream BEST_WALK_ONNX_2 | 0.64 | 0.55 |
+| v3 | 0.57 | 0.54 |
+| v4 | 0.60 | 0.55 |
+| v5 seed 0 / 1 / 2 | 0.55 / 0.57 / 0.55 | 0.51 / 0.51 / 0.52 |
+| v6 | 0.49 | 0.48 |
+| replica seed 0 / 1 | 0.57 / 0.55 | 0.54 / 0.56 |
+
+Where we lose: by direction (0.6 and 0.8 m/s, 4 seeds per direction), v3 and v5 fail
+**every push from behind within ±45° of forward**, even at 0.6 m/s, while BEST_WALK survives most
+of them. Both fail pushes from the front. On a 0.6 m/s push from behind, v5's hip-pitch joints move
+only 0.06 rad before it falls (0.5 s); BEST_WALK swings them 0.17–0.31 rad and recovers. Knees sit
+near their soft limit in both, so joint limits don't explain it. Push survival
+of v3 and v5 is flat from 43M to 150M training steps (0.53–0.58), so longer training alone is
+unlikely to help.
+
+Each v7 run changes one thing from v5 (the hypothesis is in each config file):
+
+| run | change vs. v5 | hypothesis |
+|---|---|---|
+| v7a | pushes every 2–5 s (was 5–10), 0.2–1.2 m/s (was 0.1–1.0) | recovery is under-trained data-wise |
+| v7b | action-rate, torque and imitation costs also paused for 1.5 s after a push | costs make vigorous recovery steps too expensive |
+| v7c | discount 0.99 (was 0.97) | a fall 0.5–1 s after a push is barely credited at a 0.7 s horizon |
+| v7d | fall penalty −500 with the reward clip removed | falling only costs the lost alive bonus |
+| v7e | new `push_recovery` reward (wide-kernel velocity tracking for 1.5 s after a push) | tracking reward has no gradient at push speeds |
+| v7f | fine-tune v5 for 50M steps with v7a's pushes (`--init-from`) | a push-heavy finishing phase (curriculum) beats push-heavy training from scratch |
+| v7g | 50 % of commands at zero velocity (was 10 %) | standing pushes get only ~10 % of the push data |
+
+Results (192 trials per condition; v5, v7a, v7b and upstream and v7g re-run with 384 trials, ± 0.02–0.03).
+Walking = mean over the 9 tracking commands (falls, RMS vx / wz error), nominal and `--realistic`:
+
+| run | nominal push | realistic push | 0.4 / 0.6 / 0.8 nominal | walking nominal | walking realistic | verdict |
+|---|---|---|---|---|---|---|
+| upstream BEST_WALK | **0.74** | **0.69** | 0.94 / 0.68 / 0.60 | 0 %, 0.03 / 0.12 | 2 %, 0.04 / 0.25 | target |
+| v5 (reference) | 0.56 | 0.49 | 0.72 / 0.61 / 0.34 | 0 %, 0.03 / 0.14 | 2 %, 0.05 / 0.19 | |
+| v7a more pushes | 0.58 | 0.52 | 0.88 / 0.65 / 0.20 | 0 %, 0.03 / 0.17 | 0 %, 0.03 / 0.25 | no gain: better at 0.4–0.6, worse at 0.8 |
+| v7b costs paused after push | **0.64** | **0.56** | **1.00** / 0.57 / 0.34 | 0 %, 0.03 / 0.14 | 2 %, 0.03 / 0.20 | **only gain (~2 SE)**, all of it at 0.4 m/s |
+| v7c gamma 0.99 | 0.55 | 0.51 | 0.81 / 0.52 / 0.33 | 0 %, 0.07 / 0.37 | 0 %, 0.07 / 0.38 | no gain, walking much worse |
+| v7d fall penalty | 0.56 | 0.54 | 0.73 / 0.61 / 0.34 | 0 %, 0.04 / 0.14 | 2 %, 0.04 / 0.19 | no change |
+| v7e recovery reward | 0.41 | 0.42 | 0.77 / 0.45 / 0.00 | 0 %, 0.02 / 0.15 | 4 %, 0.07 / 0.18 | **worse**, collapses at 0.8 m/s |
+| v7f fine-tune v5 with v7a pushes | 0.54 | 0.53 | 0.75 / 0.56 / 0.31 | 0 %, 0.03 / 0.15 | 2 %, 0.05 / 0.18 | no change |
+| v7g 50 % zero commands | 0.60 | **0.56** | 0.88 / 0.54 / 0.38 | 0 %, 0.03 / 0.27 | 0 %, 0.04 / 0.30 | realistic gain (~2 SE), turning worse |
+| v8 = v7b + v7g | 0.64 | 0.56 | 0.98 / 0.55 / 0.40 | 0 %, 0.05 / 0.15 | 0 %, 0.05 / 0.18 | **doesn't walk**; push no better than v7b |
+
+Mean tracking error hides a policy that stands still: standing at a 0.1 m/s command costs only 0.1
+m/s of error. Distance covered per command (`eval_walk_*.json`) shows that **v7c and v8 don't walk at
+all** (≤ 0.08 m in 15 s at 0.1–0.15 m/s, v5: 1.3–1.9 m) and v7d stands at 0.1 m/s on the nominal
+model. v7b, v7g and the others walk forward like v5.
+
+What we learned:
+- **Pausing the movement costs after a push (v7b) is the only change that helps.** It makes small
+  pushes free to recover (0.4 m/s: 1.00), but doesn't move 0.6–0.8 m/s, where upstream's lead is.
+- **More pushes while standing (v7g) helps a little under realistic conditions**, at the cost of
+  turning (yaw-rate error doubles), presumably because less of training is spent turning.
+- **More push data doesn't help**, whether from scratch (v7a) or as a fine-tuning curriculum (v7f).
+  The policy sees enough pushes; it doesn't find the recovery behaviour.
+- **Making falls costlier doesn't help**, whether by penalty (v7d) or by a longer horizon (v7c).
+  A longer horizon also made walking much worse at this training budget.
+- **Combining v7b and v7g (v8) collapsed walking**: with half the commands at zero and the gait
+  costs paused after every push, PPO settled on standing, and push survival didn't improve over v7b.
+- **Shaping the post-push velocity backfires (v7e):** the policy earns the reward without stepping
+  and loses the 0.8 m/s pushes entirely.
+- By direction (`dirs` check, 0.6 / 0.8 m/s), v7a and v7b gain at ±45° from behind, but **every
+  policy still fails pushes straight from behind (0°, ±22.5°)**, which BEST_WALK survives.
+- Ruled out as explanations of BEST_WALK's advantage: **marching in place** (every policy, upstream
+  included, stands with both feet down at zero command) and **posture alone** (v7b and the replica
+  stand with the CoM 1.3–1.5 cm ahead of the feet like BEST_WALK's 1.2 cm, and still fail; v5 leans
+  most, 3.1 cm).

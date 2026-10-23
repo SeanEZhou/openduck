@@ -1,0 +1,28 @@
+{
+  "policy": "results/mjx_walking_v5_seed2/policy.onnx",
+  "cmd": [
+    0,
+    0,
+    0
+  ],
+  "nominal": {
+    "pooled": 0.547,
+    "se": 0.036,
+    "trials": 192,
+    "by_magnitude": {
+      "0.4": 0.844,
+      "0.6": 0.531,
+      "0.8": 0.266
+    }
+  },
+  "realistic": {
+    "pooled": 0.521,
+    "se": 0.036,
+    "trials": 192,
+    "by_magnitude": {
+      "0.4": 0.859,
+      "0.6": 0.531,
+      "0.8": 0.172
+    }
+  }
+}

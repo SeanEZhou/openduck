@@ -1,0 +1,10 @@
+# Walking v7e (push series, round 2) = v5 + a shaped post-push reward (push_recovery: wide-kernel
+# velocity tracking, active for 1.5 s after each push). Hypothesis: tracking_lin_vel has no
+# gradient at push speeds (sigma 0.01), so nothing but the alive bonus rewards stopping a push.
+base: configs/train_walking_v5.yaml
+env:
+  rewards:
+    scales:
+      push_recovery: 10.0
+    params:
+      push_recovery: {sigma: 0.25}

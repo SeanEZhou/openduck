@@ -2,6 +2,7 @@
   "policy": "results/mjx_walking_v5_seed0/policy.onnx",
   "config": "configs/eval_baseline.yaml",
   "randomized": false,
+  "realistic": false,
   "per_command": [
     {
       "episodes": 3,
